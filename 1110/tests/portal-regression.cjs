@@ -58,8 +58,8 @@ function setup({modelAvailable=true,deferred=false,handAvailable=true,cameraErro
   if(modelAvailable)sandbox.SelfieSegmentation=Model;
   if(handAvailable)sandbox.Hands=HandModel;
   vm.createContext(sandbox);
-  vm.runInContext(source+`\nthis.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,palmStagePoint,updatePalmDrawing,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,
-    state:()=>({personReady,toonReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt,heroIndex:summonedHero?.heroIndex,heroX:summonedHero?.x,heroY:summonedHero?.y,handTrailLength:handTrail.length,drawingHand,handCooldownUntil}),
+  vm.runInContext(source+`\nthis.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,palmStagePoint,updatePalmDrawing,fitHandCircle,handInkPoint,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,
+    state:()=>({personReady,toonReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt,heroIndex:summonedHero?.heroIndex,heroX:summonedHero?.x,heroY:summonedHero?.y,handTrailLength:handTrail.length,drawingHand,handCooldownUntil,handPoint:palms[0]?palmStagePoint(palms[0]):null}),
     personContext:pc,probeContext:personProbeCtx,paintContext:paintCtx,paintedPerson,person,subjectContext:subjectCtx,sceneContext:ctx,landscapeContext:landscapeCtx,worldContext:worldCtx,cosmosImage,snowImage,portalRealms,avengers};`,sandbox);
   function drawCircle(x=900,y=250,r=90){
     const events=elements.get('#scene').listeners;
@@ -287,6 +287,34 @@ test('an open palm draws a full circle and opens a portal automatically',async()
  const opened=env.api.state().realmIndex;
  for(let i=0;i<8;i++)feedPalmAt(env,890,300,7000+i*100);
  assert.equal(env.api.state().realmIndex,opened,'holding the hand still must not reopen the portal');
+});
+test('a single bad hand detection does not create a spike, while intentional movement stays responsive',async()=>{
+ const env=setup();await env.api.start();await flush();
+ for(let i=0;i<3;i++)feedPalmAt(env,830,300,2000+i*100);
+ const before=env.api.state().handPoint;
+ feedPalmAt(env,940,250,2300);const after=env.api.state().handPoint;
+ assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<2,'one outlier must not move the hand cursor');
+ for(let i=0;i<4;i++)feedPalmAt(env,890,300,2400+i*100);
+ assert.ok(Math.abs(env.api.state().handPoint.x-890)<5,'a real move must settle within a few camera frames');
+});
+test('circular hand ink is corrected to a stable radius after enough of a loop',()=>{
+ const env=setup();
+ const stroke=Array.from({length:40},(_,i)=>{const angle=i*Math.PI*1.6/39,r=90*(1+.08*Math.sin(i*2.7)+.025*Math.cos(i*1.9));return {x:900+Math.cos(angle)*r,y:250+Math.sin(angle)*r,t:i*100};});
+ const guide=env.api.fitHandCircle(stroke);assert.ok(guide);assert.ok(Math.hypot(guide.x-900,guide.y-250)<7);
+ const deviation=points=>points.reduce((sum,p)=>sum+Math.abs(Math.hypot(p.x-guide.x,p.y-guide.y)-guide.r),0)/points.length;
+ const corrected=stroke.map(p=>env.api.handInkPoint(p,guide));
+ assert.ok(deviation(corrected)<deviation(stroke)*.2,'radial wobble must be reduced by at least 80%');
+ assert.equal(env.api.fitHandCircle(circleStroke({turn:Math.PI})),null,'a half circle is too early to lock');
+ assert.equal(env.api.fitHandCircle(triangleStroke()),null,'a triangle must keep its corners');
+});
+test('an uneven hand circle still opens automatically without a half-circle false trigger',async()=>{
+ const env=setup();await env.api.start();await flush();const before=env.api.state().realmIndex;
+ for(let i=0;i<=60;i++){
+  const angle=i*Math.PI*2/60,r=70*(1+.23*Math.sin(i*2.1));
+  feedPalmAt(env,830+Math.cos(angle)*r,300+Math.sin(angle)*r,2000+i*90);
+  if(i===30)assert.equal(env.api.state().realmIndex,before);
+ }
+ assert.notEqual(env.api.state().realmIndex,before);assert.equal(env.api.state().heroIndex,undefined);
 });
 test('a short approach before the hand circle does not prevent recognition',async()=>{
  const env=setup();await env.api.start();await flush();const before=env.api.state().realmIndex;

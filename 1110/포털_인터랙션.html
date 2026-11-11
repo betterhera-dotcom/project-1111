@@ -120,7 +120,7 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let w,h,points=[],drawing=false,portal=null,activePointer=null,stream,captureTimer=null,cameraSession=0,cameraWanted=false;
 let preview=true;
 let summonedHero=null,lastHero=-1;
-let handTrail=[],drawingHand=null,handLastSeen=0,handCooldownUntil=0;
+let handTrail=[],handCircleGuide=null,drawingHand=null,handLastSeen=0,handCooldownUntil=0;
 let realmDeck=[],lastRealm=0;
 function nextRealm(){
  if(!realmDeck.length){
@@ -282,8 +282,10 @@ function updatePalms(results){
  for(const [index,landmarks] of (results.multiHandLandmarks||[]).slice(0,2).entries()){
   const detected=describePalm(landmarks);if(!detected)continue;
   const key=results.multiHandedness?.[index]?.label||String(index),old=palms.find(palm=>palm.key===key&&now-palm.updated<500);
-  const blend=.48;
-  next.push({...detected,key,x:old?old.x+(detected.x-old.x)*blend:detected.x,y:old?old.y+(detected.y-old.y)*blend:detected.y,span:old?old.span+(detected.span-old.span)*blend:detected.span,born:old?.born??now,updated:now});
+  // The middle of three detections rejects one-frame spikes without a long trailing delay.
+  const samples=[...(old?.samples||[]),detected].slice(-3),middle=axis=>samples.map(p=>p[axis]).sort((a,b)=>a-b)[1];
+  const target=samples.length===3?{x:middle('x'),y:middle('y')}:detected,blend=old?1-Math.exp(-Math.max(16,now-old.updated)/55):1;
+  next.push({...detected,key,samples,x:old?old.x+(target.x-old.x)*blend:target.x,y:old?old.y+(target.y-old.y)*blend:target.y,span:old?old.span+(detected.span-old.span)*.48:detected.span,born:old?.born??now,updated:now});
  }
  palms=next;
  updatePalmDrawing(now);
@@ -295,9 +297,30 @@ function palmStagePoint(palm){
  return {x:(w-vw*scale)/2+(1-palm.x)*vw*scale,y:(h-vh*scale)/2+palm.y*vh*scale,r:Math.min(62,Math.max(22,palm.span*vw*scale*.65))};
 }
 function resetHandDrawing(cooldown=0){
- const hadTrail=handTrail.length>1;handTrail=[];drawingHand=null;handLastSeen=0;
+ const hadTrail=handTrail.length>1;handTrail=[];handCircleGuide=null;drawingHand=null;handLastSeen=0;
  handCooldownUntil=Math.max(handCooldownUntil,performance.now()+cooldown);
  if(hadTrail&&!drawing)updateReadout(preview?'preview':portal?'active':'idle');
+}
+function fitHandCircle(stroke){
+ if(stroke.length<10)return null;
+ const mx=stroke.reduce((sum,p)=>sum+p.x,0)/stroke.length,my=stroke.reduce((sum,p)=>sum+p.y,0)/stroke.length;
+ let xx=0,xy=0,yy=0,xz=0,yz=0;
+ for(const p of stroke){const u=p.x-mx,v=p.y-my,z=(u*u+v*v)/2;xx+=u*u;xy+=u*v;yy+=v*v;xz+=u*z;yz+=v*z;}
+ const determinant=xx*yy-xy*xy;if(determinant<1)return null;
+ const x=mx+(xz*yy-yz*xy)/determinant,y=my+(yz*xx-xz*xy)/determinant;
+ const radii=stroke.map(p=>Math.hypot(p.x-x,p.y-y)),r=radii.reduce((sum,value)=>sum+value,0)/radii.length;
+ if(r<32||r>Math.min(w,h)*.65)return null;
+ const error=radii.reduce((sum,value)=>sum+Math.abs(value-r),0)/radii.length/r;
+ if(error>.12||Math.max(...radii.map(value=>Math.abs(value-r)))>r*.3)return null;
+ let turn=0,travel=0;
+ for(let i=1;i<stroke.length;i++){const a=Math.atan2(stroke[i].y-y,stroke[i].x-x)-Math.atan2(stroke[i-1].y-y,stroke[i-1].x-x),delta=Math.atan2(Math.sin(a),Math.cos(a));turn+=delta;travel+=Math.abs(delta);}
+ // More than half a turn is needed before a freehand stroke is treated as a circle.
+ return Math.abs(turn)>3.5&&travel<Math.abs(turn)*1.3?{x,y,r,turn,error,startT:stroke[0].t}:null;
+}
+function handInkPoint(point,guide=handCircleGuide){
+ if(!guide||point.t<guide.startT)return point;
+ const distance=Math.hypot(point.x-guide.x,point.y-guide.y);if(distance<1)return point;
+ return {...point,x:guide.x+(point.x-guide.x)*guide.r/distance,y:guide.y+(point.y-guide.y)*guide.r/distance};
 }
 function updatePalmDrawing(now){
  if(!stream||!handsReady||document.hidden||activePointer!==null||drawing){resetHandDrawing(350);return;}
@@ -314,13 +337,20 @@ function updatePalmDrawing(now){
  handTrail=handTrail.filter(value=>now-value.t<10000).slice(-96);
  if(handTrail.length<8)return;
  updateReadout('drawing');
+ let nextGuide=null;
  // A short approach stroke may precede the loop: look for a closed shape in the recent trail.
  for(let start=0;start<=handTrail.length-8;start++){
-  const stroke=handTrail.slice(start),triangle=recognizeTriangle(stroke),circle=triangle?null:recognizeCircle(stroke),shape=triangle||circle;
+  const stroke=handTrail.slice(start),triangle=recognizeTriangle(stroke),fitted=triangle?null:fitHandCircle(stroke);
+  if(fitted&&!nextGuide)nextGuide=fitted;
+  const circle=triangle?null:recognizeCircle(stroke)||(fitted&&Math.abs(fitted.turn)>5.2?fitted:null),shape=triangle||circle;
   if(!shape||shape.r<32||Math.hypot(stroke[0].x-point.x,stroke[0].y-point.y)>Math.min(40,shape.r*.45))continue;
   if(triangle)summonAvenger(triangle);else openGateway(circle);
   resetHandDrawing(1100);return;
  }
+ if(nextGuide&&handCircleGuide&&Math.hypot(nextGuide.x-handCircleGuide.x,nextGuide.y-handCircleGuide.y)<nextGuide.r*.3){
+  nextGuide={...nextGuide,x:handCircleGuide.x*.7+nextGuide.x*.3,y:handCircleGuide.y*.7+nextGuide.y*.3,r:handCircleGuide.r*.7+nextGuide.r*.3};
+ }
+ handCircleGuide=nextGuide;
 }
 function entrancePose(now){
  if(reducedMotion.matches||portal?.enteredAt==null)return {progress:1,zoom:1,lift:0,opacity:1};
@@ -338,7 +368,7 @@ function drawPalmSpells(now,t){
  const active=palms.filter(palm=>now-palm.updated<450);if(!active.length)return;
  ctx.save();
  for(const palm of active){
-  const point=palmStagePoint(palm),appear=reducedMotion.matches?1:Math.min(1,(now-palm.born)/180),fade=Math.min(1,(450-(now-palm.updated))/160);
+  const raw=palmStagePoint(palm),point=palm.key===drawingHand?handInkPoint({...raw,t:now}):raw,appear=reducedMotion.matches?1:Math.min(1,(now-palm.born)/180),fade=Math.min(1,(450-(now-palm.updated))/160);
   if(point.r<1||appear<=0)continue;
   ctx.save();ctx.translate(point.x,point.y);ctx.rotate(-palm.angle);drawSigil(ctx,0,0,point.r,t,appear*fade*.95);ctx.globalCompositeOperation='lighter';
   for(let i=0;i<20;i++){const a=i*2.399+t*.0015,rr=point.r*(1.02+(i%3)*.035);ctx.strokeStyle=i%3?'#ffa73d99':'#ffe4aacc';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);ctx.lineTo(Math.cos(a+.025)*(rr+3+i%5),Math.sin(a+.025)*(rr+3+i%5));ctx.stroke();}
@@ -683,8 +713,14 @@ function frame(now){
   drawPortalEntrance(now);
   drawPalmSpells(now,t);
   for(const stroke of [points,handTrail])if(stroke.length){
-    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor='#ff6900';ctx.shadowBlur=18;ctx.strokeStyle='#ff7a22';ctx.lineWidth=6;ctx.beginPath();stroke.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.strokeStyle='#ffe4a0';ctx.lineWidth=1.7;ctx.stroke();
-    const p=stroke.at(-1);ctx.fillStyle='#fff2c3';ctx.beginPath();ctx.arc(p.x,p.y,3,0,TAU);ctx.fill();ctx.restore();
+    const ink=stroke===handTrail?stroke.map(p=>handInkPoint(p)):stroke;
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor='#ff6900';ctx.shadowBlur=18;ctx.strokeStyle='#ff7a22';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(ink[0].x,ink[0].y);
+    if(stroke===handTrail&&ink.length>2){
+      for(let i=1;i<ink.length-1;i++)ctx.quadraticCurveTo(ink[i].x,ink[i].y,(ink[i].x+ink[i+1].x)/2,(ink[i].y+ink[i+1].y)/2);
+      ctx.quadraticCurveTo(ink.at(-1).x,ink.at(-1).y,ink.at(-1).x,ink.at(-1).y);
+    }else for(const p of ink.slice(1))ctx.lineTo(p.x,p.y);
+    ctx.stroke();ctx.strokeStyle='#ffe4a0';ctx.lineWidth=1.7;ctx.stroke();
+    const p=ink.at(-1);ctx.fillStyle='#fff2c3';ctx.beginPath();ctx.arc(p.x,p.y,3,0,TAU);ctx.fill();ctx.restore();
   }
   drawSpellCursor(now,t);
   requestAnimationFrame(frame);
