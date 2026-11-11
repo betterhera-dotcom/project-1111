@@ -1,0 +1,11 @@
+// Test real MediaPipe inference on the user's hand-reference image without using a webcam.
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'포털_인터랙션.html'),'utf8');
+const describe=source.slice(source.indexOf('function describePalm('),source.indexOf('function updatePalms('));
+const sigil=source.slice(source.indexOf('function drawSigil('),source.indexOf('function drawSpellCursor('));
+const reference=fs.readFileSync(path.join(root,'tests','fixtures','right_hands.jpg')).toString('base64');
+const model='https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/';
+const page=`<!doctype html><meta charset="utf-8"><title>Hands inference QA</title><style>body{background:#111822;color:#eee;font:18px system-ui;margin:35px}canvas{max-width:650px;width:90%}#result{color:#ffc47e}</style><h1>손바닥 인식 실제 모델 확인</h1><p id="result">모델 로딩 중…</p><canvas id="view"></canvas><script src="${model}hands.js" crossorigin="anonymous"></script><script>
+const TAU=Math.PI*2,video={videoWidth:447,videoHeight:447};${describe}\n${sigil}
+const image=new Image();image.onload=async()=>{const canvas=document.querySelector('#view');canvas.width=image.width;canvas.height=image.height;video.videoWidth=image.width;video.videoHeight=image.height;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);try{const hands=new Hands({locateFile:file=>'${model}'+file});hands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.5,minTrackingConfidence:.5});hands.onResults(results=>{let open=0;for(const points of results.multiHandLandmarks||[]){const palm=describePalm(points);if(palm){open++;drawSigil(ctx,palm.x*image.width,palm.y*image.height,palm.span*image.width*.78,1000,1);}}document.querySelector('#result').textContent='인식된 손: '+(results.multiHandLandmarks||[]).length+' / 펼친 손바닥: '+open;});await hands.send({image});}catch(error){document.querySelector('#result').textContent='모델 오류: '+error.message;}};image.src='data:image/jpeg;base64,${reference}';</script>`;
+http.createServer((request,response)=>{response.setHeader('Content-Type','text/html; charset=utf-8');response.end(page);}).listen(4197,'127.0.0.1',()=>console.log('Hands QA: http://127.0.0.1:4197/'));

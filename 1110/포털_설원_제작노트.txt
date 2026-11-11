@@ -1,0 +1,12 @@
+FROZEN DIMENSION / PRODUCTION NOTES
+Created: 2026-11-10
+
+New HTML version; earlier files are preserved.
+The full camera video is hidden. Room reconstruction is removed. The portal receives only the masked person after segmentation is ready. If segmentation fails, the snow world stays visible and no raw camera image is shown. Snowfall uses depth-scaled particles and pointer parallax. Fonts and background graphics are embedded in the HTML.
+
+The camera's optional segmentation library and model require an internet connection on first load. Camera frames stay on the device; they are not recorded or uploaded.
+
+Artwork generation: built-in image_gen tool.
+Final prompt:
+Use case: stylized-concept. Asset type: cinematic background for an interactive Doctor Strange-inspired portal webpage. Create an original photorealistic 3D/VFX snowy other dimension, a vast moonlit glacial valley with towering jagged snowy Himalayan-like mountains, turquoise ice cliffs, distant luminous suspended stone fragments and very subtle pale cyan aurora. Dark indigo storm clouds, silver-blue moonlight, sparkling windblown snow, exquisite realistic ice and snow textures, atmospheric perspective, cold blue/cyan/silver palette with tiny restrained amber highlights in distant fissures. Wide landscape 16:9. A broad empty snowfield stretches into the distance in the center and right, providing a clean backdrop for a live person to be composited inside a circular magic portal. Keep the left third darker with a shadowed mountain silhouette for readable pale gold serif text. Convincing cinematic spatial depth and volumetric light. No people, no faces, no buildings, no office furniture, no computers, no painted circular portal ring (the webpage draws its own animated ring), no text or logos, no watermark. This is a premium realistic environment artwork, not a flat illustration, UI mockup or poster.
+

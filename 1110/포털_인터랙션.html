@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0e12">
+<meta name="description" content="원을 그려 불꽃 포털을 여는 인터랙티브 멀티버스 실험실">
+<title>PORTAL INITIATIVE · 멀티버스 실험실</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=Cinzel:wght@500;600;700;800&family=Noto+Serif+KR:wght@600;700;900&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
+:root{color-scheme:dark;--bg:#0b0e12;--line:#ffffff16;--muted:#8a919a;--orange:#ff8a38;--gold:#ffc180;--display:'Barlow Condensed','Bahnschrift Condensed','Impact',sans-serif;--body:'Noto Sans KR','Malgun Gothic',sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#edf0f3;font-family:var(--body);font-size:13px;overflow:hidden}button{font:inherit}button:focus-visible{outline:2px solid var(--gold);outline-offset:5px}button:disabled{opacity:.5;cursor:wait}button{cursor:pointer}::selection{background:#ff8a3855}
+.topbar{height:82px;padding:0 3.1vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:relative;background:#0c1015;z-index:4}.brand{display:flex;gap:13px;align-items:center}.brand-mark{width:39px;height:39px;color:var(--orange)}.brand-name{font:700 21px/1 var(--display);letter-spacing:.13em}.brand-sub{margin-top:6px;color:#777f89;font:500 10px var(--display);letter-spacing:.27em}.topnav{display:flex;gap:36px;height:100%;align-items:center;font:600 12px var(--display);letter-spacing:.16em;color:#69717c}.topnav .active{height:100%;display:flex;align-items:center;color:#eceff4;position:relative}.topnav .active:after{content:'';height:2px;background:var(--orange);position:absolute;bottom:0;width:100%}.system{font:600 11px var(--display);letter-spacing:.14em;display:flex;align-items:center;gap:10px}.dot{width:5px;height:5px;display:inline-block;background:#b0c7b8;box-shadow:0 0 9px #b0c7b84d;border-radius:50%}.system span:last-child{color:#64707b;margin-left:13px}
+.workspace{position:relative;height:calc(100svh - 216px);min-height:460px;overflow:hidden;background:#0c1016}.workspace:after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px #080b10aa}#camera,#scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}#camera{transform:scaleX(-1);opacity:.33}#scene{touch-action:none;cursor:crosshair;z-index:1}.intro{position:absolute;z-index:2;top:12%;left:5.1%;width:355px;pointer-events:none}.eyebrow{display:flex;align-items:center;gap:10px;font:600 11px var(--display);letter-spacing:.23em;color:var(--orange)}.eyebrow:before{content:'';width:24px;height:1px;background:var(--orange)}h1{font:900 italic clamp(56px,6.15vw,92px)/.88 var(--display);letter-spacing:-.015em;margin:26px 0 22px;filter:drop-shadow(0 4px 10px #0006)}h1 span{display:block}h1 .metal{background:linear-gradient(175deg,#fff 15%,#b6bec9 44%,#f8fafc 49%,#7f8996 87%);background-clip:text;-webkit-text-fill-color:transparent}h1 .outline{color:#f4a76f;-webkit-text-stroke:1px #ffbd8c;filter:drop-shadow(0 0 22px #fd80272c)}.intro h2{font-size:18px;letter-spacing:-.06em;font-weight:800;margin:0 0 12px}.description{font-size:12px;line-height:1.95;color:#87919e;margin:0}.launch{pointer-events:auto;display:inline-flex;align-items:center;gap:29px;background:#ff9a51;color:#21170f;border:0;padding:13px 18px;margin-top:27px;font-size:12px;font-weight:800;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));transition:background .2s,transform .2s}.launch:hover{background:#ffbd89;transform:translateY(-2px)}.launch svg{width:17px;height:17px}.intro-note{margin-top:12px;font:500 10px var(--display);letter-spacing:.16em;color:#56616e}.specimen{position:absolute;z-index:2;left:45%;right:4%;top:26px;display:flex;justify-content:space-between;color:#64707d;font:500 10px var(--display);letter-spacing:.18em;pointer-events:none}.specimen b{font-weight:600;color:#b6bec7}.stage-corner{position:absolute;z-index:2;pointer-events:none;width:18px;height:18px;border-color:#74808f50;border-style:solid}.tl{left:43%;top:61px;border-width:1px 0 0 1px}.tr{right:3%;top:61px;border-width:1px 1px 0 0}.bl{left:43%;bottom:69px;border-width:0 0 1px 1px}.br{right:3%;bottom:69px;border-width:0 1px 1px 0}.stage-caption{position:absolute;z-index:2;bottom:27px;left:44%;right:4%;text-align:center;pointer-events:none}.stage-caption strong{font:600 12px var(--display);letter-spacing:.23em;color:#ffbc87}.stage-caption p{font-size:11px;color:#6f7a87;margin:7px 0 0}.vertical-label{position:absolute;right:20px;top:50%;writing-mode:vertical-rl;font:500 9px var(--display);letter-spacing:.26em;color:#465361;z-index:2;pointer-events:none}
+.control-deck{position:relative;z-index:3;border-top:1px solid var(--line);background:#0e1218;padding:20px 3.1vw 0;min-height:134px}.controls{display:flex;align-items:center;gap:10px}.control-label{margin-right:15px;color:#536171;font:600 10px var(--display);letter-spacing:.18em}.control-button{display:flex;align-items:center;gap:10px;padding:11px 16px;background:#1c232d;border:1px solid #35404d;color:#e2e6ed;font-size:11px;font-weight:600;border-radius:3px;transition:background .2s,border-color .2s}.control-button:hover{background:#29303b;border-color:#6a737d}.control-button svg{width:15px;height:15px}.control-button.secondary{background:transparent;color:#9aa5b2;border-color:#ffffff18}.control-button[aria-pressed=true]{border-color:#ff9a51;color:#ffbc87}.readout{margin-left:auto;display:flex;align-items:center;gap:24px}.readout-item{border-left:1px solid var(--line);padding-left:23px}.readout-item small{display:block;font:500 9px var(--display);letter-spacing:.18em;color:#5c6877;margin-bottom:5px}.readout-item b{font:600 16px var(--display);letter-spacing:.04em;color:#aab4c1}.readout-item b em{font-style:normal;font-size:10px;color:#687684;margin-left:5px}.status-row{display:flex;align-items:center;gap:9px;border-top:1px solid #ffffff09;margin-top:18px;padding:13px 0;font-size:10px;color:#8b95a2}.status-row .dot{background:var(--orange);box-shadow:0 0 7px #ff8a3840;width:4px;height:4px}#status{flex:1}.privacy{font:500 10px var(--display);letter-spacing:.12em;color:#596574;display:flex;align-items:center;gap:7px}.privacy svg{width:11px;height:11px}.instructions{position:absolute;left:5.1%;bottom:29px;display:flex;gap:20px;z-index:2;pointer-events:none}.step{display:flex;gap:8px;align-items:center;font-size:10px;color:#6d7885}.step span{font:600 10px var(--display);color:#af7d56;border:1px solid #af7d5633;padding:3px 5px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(min-width:1600px){.intro{top:18%;width:430px}h1{font-size:105px}.description{font-size:14px}.intro h2{font-size:22px}.launch{margin-top:35px;padding:16px 22px}}
+@media(max-width:1050px){.topnav{gap:20px}.intro{left:4%;width:290px}h1{font-size:67px}.description{font-size:11px}.intro h2{font-size:16px}.readout{gap:12px}.readout-item{padding-left:12px}.instructions{left:4%;gap:12px}.control-label{display:none}.system span:last-child{display:none}}
+@media(max-width:700px){body{overflow:auto}.topbar{height:67px;padding:0 20px}.brand-name{font-size:17px}.brand-sub{font-size:8px}.brand-mark{width:32px;height:32px}.topnav{display:none}.system{font-size:9px}.workspace{height:760px;min-height:0}.intro{top:31px;left:24px;width:calc(100% - 48px)}.eyebrow{font-size:10px}h1{font-size:62px;margin:18px 0 16px;line-height:.85}h1 span{display:inline}h1 .outline{display:block;margin-top:5px}.intro h2{font-size:16px;margin-bottom:8px}.description{font-size:11px}.launch{margin-top:17px;padding:10px 15px;font-size:11px}.intro-note{display:none}.specimen{left:25px;right:25px;top:360px;font-size:9px}.tl{left:20px;top:390px}.tr{right:20px;top:390px}.bl{left:20px;bottom:65px}.br{right:20px;bottom:65px}.stage-caption{left:20px;right:20px;bottom:20px}.stage-caption strong{font-size:10px}.stage-caption p{font-size:10px}.instructions,.vertical-label{display:none}.control-deck{padding:17px 20px 0;min-height:145px}.control-button{padding:11px 12px;font-size:10px;gap:7px}.controls{gap:8px}.readout-item:first-child{display:none}.readout-item{padding-left:10px}.readout-item b{font-size:13px}.readout-item small{font-size:8px}.readout{gap:0}.privacy{font-size:8px}.privacy span{display:none}.status-row{font-size:10px;line-height:1.8;align-items:flex-start;min-height:53px}.status-row>.dot{margin-top:7px}}
+@media(max-width:370px){.readout{display:none}.system{font-size:8px}.brand-name{font-size:15px}h1{font-size:56px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+.flame-setting{display:flex;align-items:center;gap:8px;margin-left:8px;font-size:10px;color:#98a3b1;white-space:nowrap}.flame-setting input{width:72px;accent-color:var(--orange);cursor:pointer}.flame-setting output{width:26px;color:var(--gold);font-size:10px}.flame-setting input:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+@media(min-width:701px) and (max-height:675px){body{overflow:auto}}
+@media(min-width:701px) and (max-width:1050px){.readout-item:first-child{display:none}.flame-setting{margin-left:2px}}
+@media(max-width:700px){.controls{flex-wrap:wrap}.flame-setting{order:3;width:100%;margin:7px 0 0;padding-top:11px;border-top:1px solid var(--line);justify-content:flex-end}.flame-setting input{width:100px}.control-deck{min-height:182px}}
+#camera{display:none}#landscape,#portal-world,#subject{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#landscape{z-index:0}#portal-world{z-index:1}#subject{z-index:2}#scene{z-index:3}.contrast-veil{position:absolute;inset:0;z-index:4;pointer-events:none;background:linear-gradient(90deg,#0b0e12f5 0%,#0b0e12e0 24%,#0b0e1280 42%,#0b0e1210 68%,#0b0e1220 100%)}.intro,.specimen,.stage-corner,.stage-caption,.vertical-label,.instructions{z-index:5}
+#spell-cursor{position:fixed;inset:0;width:100%;height:100%;z-index:20;pointer-events:none}
+:root{--movie:'Cinzel','Times New Roman',serif;--movie-ko:'Noto Serif KR','Batang',serif}.intro{width:min(450px,42vw);text-align:center}.eyebrow{justify-content:center;letter-spacing:.2em}.eyebrow:after{content:'';width:24px;height:1px;background:var(--orange)}.intro h1{font-family:var(--movie);font-style:normal;font-size:clamp(30px,3.8vw,58px);font-weight:600;line-height:1.15;letter-spacing:.015em;margin:32px 0 28px;filter:drop-shadow(0 3px 2px #000b)}.movie-prelude{font-size:.48em;letter-spacing:.31em;padding-left:.31em;line-height:1.7}.movie-main{position:relative;white-space:nowrap;padding-top:5px;letter-spacing:-.025em}.movie-main:before{content:'';position:absolute;left:1%;right:1%;top:0;height:1px;background:linear-gradient(90deg,transparent,#8f5e2b,#ffe5aa,#8f5e2b,transparent);box-shadow:0 1px 2px #000}.movie-prelude,.movie-main{color:#e9cf9a;background:linear-gradient(172deg,#fff5d8 0%,#dec48e 21%,#fff8e5 39%,#a9874f 43%,#f9e2b2 49%,#f5efe1 56%,#a58243 78%,#fce4ad 92%);background-clip:text;-webkit-text-fill-color:transparent;-webkit-text-stroke:.35px #ceb57b;filter:drop-shadow(1px 1px 0 #3b2815) drop-shadow(-1px -1px 0 #fff2c535)}.intro h2{font-family:var(--movie-ko);font-weight:700;font-size:17px;letter-spacing:-.04em;line-height:1.8;color:#d8d5cc}.brand-name{font-family:var(--movie);font-size:16px;font-weight:600;letter-spacing:.08em;color:#e3d4b7}.intro-note{letter-spacing:.14em;color:#77818c}.description{color:#9ca6b2}.intro .launch{margin-top:24px}.specimen b{color:#d9c8a9}
+@media(max-width:700px){.contrast-veil{background:linear-gradient(180deg,#0b0e12f5 0%,#0b0e12ed 35%,#0b0e1270 51%,#0b0e1215 74%,#0b0e1270 100%)}}
+@media(max-width:700px){.intro{width:calc(100% - 48px);text-align:center}.intro h1{font-size:clamp(28px,8.8vw,42px);margin:22px 0 18px;line-height:1.15}.intro h1 span{display:block}.intro h2{font-size:14px}.intro .launch{margin-top:17px}.brand-name{font-size:12px;letter-spacing:.035em}.brand-sub{font-size:7px}.eyebrow{font-size:9px}.movie-prelude{font-size:.55em}.description{font-size:11px}}
+#gesture-hint strong{color:#f5c898;font-weight:500}#hand-status{display:block;color:#91a9b9;font-size:10px;margin-top:5px}.hand-invitation{display:inline-block;border:1px solid #ffb05d38;background:#15181ebf;padding:8px 12px;margin:14px 0 0;color:#efc08e;font-size:11px;letter-spacing:.01em}.hand-invitation svg{width:15px;height:15px;vertical-align:-3px;margin-right:5px}
+.hand-indicator{position:absolute;z-index:5;right:5%;top:75px;padding:8px 12px;border:1px solid #ffb05d38;background:#111821e8;color:#e5bb87;font-size:11px;pointer-events:none}.hand-indicator[data-mode=active]{background:#533015e8;border-color:#ffc76c;color:#ffe6b6;box-shadow:0 0 20px #ffa83b30}@media(max-width:700px){.hand-indicator{top:389px;right:28px;font-size:9px;padding:6px 9px}.intro .hand-invitation{font-size:10px;margin-top:10px;padding:6px 9px}.intro .launch{margin-top:13px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><svg class="brand-mark" viewBox="0 0 44 44" fill="none" aria-hidden="true"><path d="M22 2 41 13v21L22 43 3 32V12Z" stroke="currentColor" stroke-width="1"/><path d="m12 31 10-20 10 20h-6l-4-9-4 9Z" fill="currentColor"/><path d="M8 25h28" stroke="#0c1015" stroke-width="2"/><path d="M16 26h17" stroke="currentColor" stroke-width="2"/></svg><div><div class="brand-name">PORTAL INITIATIVE</div><div class="brand-sub">MULTIVERSAL RESEARCH DIVISION</div></div></div>
+  <nav class="topnav" aria-label="현재 실험"><span class="active">01 / PORTAL LAB</span><span>EXPERIMENTAL SYSTEM</span></nav>
+  <div class="system"><i class="dot"></i>SYSTEM ONLINE<span>V.01.06</span></div>
+</header>
+<main class="workspace" id="workspace">
+  <video id="camera" autoplay playsinline muted aria-hidden="true"></video>
+  <canvas id="landscape" aria-hidden="true"></canvas>
+  <canvas id="portal-world" aria-hidden="true"></canvas>
+  <canvas id="subject" aria-hidden="true"></canvas>
+  <canvas id="scene" aria-label="불꽃 포털 그리기 영역. 마우스나 손가락으로 원을 그리세요. 키보드는 포털 열기 버튼을 사용하세요."></canvas>
+  <div class="contrast-veil" aria-hidden="true"></div>
+  <section class="intro" aria-labelledby="main-title">
+    <div class="eyebrow">BEYOND THE POSSIBLE</div>
+    <h1 id="main-title"><span class="movie-prelude">OPEN THE</span><span class="movie-main">MULTIVERSE</span></h1>
+    <h2>당신의 손끝에서, 새로운 차원이 열린다.</h2>
+    <p class="description">웹캠을 연결하면 그림체로 변환된 내가 나타나요.<br>새 원을 그려 다른 차원의 포털로 이동해 보세요.</p>
+    <p class="hand-invitation"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 12V5a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-7a1.5 1.5 0 0 1 3 0v7-5a1.5 1.5 0 0 1 3 0v10c0 4-3 6-6 6-2 0-4-1-5-3l-5-6a1.5 1.5 0 0 1 2-2l2 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>카메라를 향해 손바닥을 펼쳐보세요</p>
+    <button class="launch" id="demo">포털 열기<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    <div class="intro-note">DRAW A CIRCLE. BREAK THE BOUNDARY.</div>
+  </section>
+  <div class="specimen"><span><b>LIVE SIMULATION</b> / SNOWFIELD — 616</span><span id="stage-state">PREVIEW MODE</span></div>
+  <div id="hand-indicator" class="hand-indicator" data-mode="waiting">웹캠 연결 필요</div>
+  <i class="stage-corner tl"></i><i class="stage-corner tr"></i><i class="stage-corner bl"></i><i class="stage-corner br"></i>
+  <div class="vertical-label">INTERDIMENSIONAL GATEWAY / CLASSIFIED</div>
+  <div class="stage-caption"><strong id="portal-caption">THE NEXT DIMENSION IS IN YOUR HANDS</strong><p id="gesture-hint"><strong>카메라를 향해 손바닥을 펼쳐보세요.</strong> 원을 그리면 포털에 입장해요.<span id="hand-status" role="status" aria-live="polite">웹캠을 연결하면 손바닥 마법진을 사용할 수 있어요.</span></p></div>
+  <div class="instructions"><div class="step"><span>01</span>원을 그리고</div><div class="step"><span>02</span>포털을 열고</div><div class="step"><span>03</span>다른 세계로</div></div>
+</main>
+<footer class="control-deck">
+  <div class="controls"><span class="control-label">MISSION CONTROL</span>
+    <button id="start" class="control-button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="m15 10 6-3v10l-6-3" stroke="currentColor" stroke-width="1.5"/></svg><span id="camera-label">웹캠 연결</span></button>
+    <button id="reset" class="control-button secondary"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6" stroke="currentColor" stroke-width="1.5"/></svg>다시 그리기</button>
+    <label class="flame-setting" for="fire-strength">불꽃 강도<input id="fire-strength" type="range" min="30" max="100" value="80"><output id="fire-value" for="fire-strength">80%</output></label>
+    <div class="readout"><div class="readout-item"><small>INPUT SOURCE</small><b id="input-source">MOUSE<em>/ TOUCH</em></b></div><div class="readout-item"><small>PORTAL ENERGY</small><b id="energy">STANDBY</b></div></div>
+  </div>
+  <div class="status-row"><i class="dot"></i><span id="status" role="status" aria-live="polite">설원 준비 완료. 마우스로 마법진을 움직이거나 웹캠을 연결해 보세요.</span><span class="privacy"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2 6 3v5c0 4-6 7-6 7s-6-3-6-7V5Z" stroke="currentColor"/><path d="m7 9 2 2 4-4" stroke="currentColor"/></svg>LOCAL PROCESSING<span> / NO RECORDING</span></span></div>
+</footer>
+<canvas id="spell-cursor" aria-hidden="true"></canvas>
+<script>
+// 카메라 영상은 메모리에서만 처리하며 녹화·업로드하지 않습니다.
+const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d'),video=document.querySelector('#camera'),status=document.querySelector('#status');
+const workspace=document.querySelector('#workspace'),cameraLabel=document.querySelector('#camera-label'),cameraButton=document.querySelector('#start');
+const stageState=document.querySelector('#stage-state'),energy=document.querySelector('#energy'),caption=document.querySelector('#portal-caption');
+const landscape=document.querySelector('#landscape'),landscapeCtx=landscape.getContext('2d');
+const worldCanvas=document.querySelector('#portal-world'),worldCtx=worldCanvas.getContext('2d');
+const subject=document.querySelector('#subject'),subjectCtx=subject.getContext('2d');
+const snowImage=new Image();snowImage.src='assets/snowfield-v1.png';
+const cosmosImage=new Image();cosmosImage.src='assets/portal-cosmos-v1.png';
+const portalRealms=[
+ {name:'우주 성운',label:'COSMIC NEBULA',image:cosmosImage,colors:['#121a4b','#291547','#061121'],spark:'#ded3ff'},
+ {name:'공중 왕국',label:'SKY KINGDOM',src:'assets/portal-sky-v1.png',colors:['#124b53','#176a68','#09292f'],spark:'#c9fff1'},
+ {name:'거울 차원',label:'MIRROR DIMENSION',src:'assets/portal-mirror-v1.png',colors:['#4a1b2b','#542222','#190e23'],spark:'#ffc29c'},
+ {name:'빛나는 숲',label:'LUMINOUS FOREST',src:'assets/portal-forest-v1.png',colors:['#07353e','#092c36','#051321'],spark:'#7fffe2'}
+];
+for(const realm of portalRealms){if(!realm.image){realm.image=new Image();realm.image.src=realm.src;}}
+const spellCanvas=document.querySelector('#spell-cursor'),spellCtx=spellCanvas.getContext('2d');
+const cursor={x:0,y:0,lastMove:-Infinity,visible:false,type:'mouse'},embers=[];
+function resizeSpell(){const d=Math.min(devicePixelRatio||1,1.75);spellCanvas.width=Math.round(innerWidth*d);spellCanvas.height=Math.round(innerHeight*d);spellCtx.setTransform(d,0,0,d,0,0);}
+addEventListener('resize',resizeSpell);resizeSpell();
+addEventListener('pointermove',e=>{
+ if(!e.isPrimary)return;
+ if(!reducedMotion.matches&&cursor.visible&&Math.hypot(e.clientX-cursor.x,e.clientY-cursor.y)>4){
+  embers.push({x:e.clientX,y:e.clientY,born:performance.now(),seed:Math.random()});if(embers.length>70)embers.shift();
+ }
+ cursor.x=e.clientX;cursor.y=e.clientY;cursor.lastMove=performance.now();cursor.visible=true;cursor.type=e.pointerType;
+},{passive:true});
+addEventListener('pointerdown',e=>{if(e.isPrimary){cursor.x=e.clientX;cursor.y=e.clientY;cursor.visible=true;cursor.lastMove=performance.now();cursor.type=e.pointerType;}},{passive:true});
+addEventListener('pointerup',e=>{if(e.pointerType==='touch')cursor.visible=false;},{passive:true});
+addEventListener('pointercancel',()=>{cursor.visible=false;embers.length=0;},{passive:true});
+document.documentElement.addEventListener('pointerleave',()=>{cursor.visible=false;embers.length=0;});
+addEventListener('blur',()=>{cursor.visible=false;embers.length=0;});
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+let w,h,points=[],drawing=false,portal=null,activePointer=null,stream,captureTimer=null,cameraSession=0,cameraWanted=false;
+let preview=true;
+let realmDeck=[],lastRealm=0;
+function nextRealm(){
+ if(!realmDeck.length){
+  realmDeck=portalRealms.map((_,index)=>index);
+  for(let i=realmDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[realmDeck[i],realmDeck[j]]=[realmDeck[j],realmDeck[i]];}
+  // Each group uses all four worlds; its boundary cannot repeat the last world.
+  if(realmDeck.at(-1)===lastRealm)[realmDeck[0],realmDeck[realmDeck.length-1]]=[realmDeck.at(-1),realmDeck[0]];
+ }
+ lastRealm=realmDeck.pop();return lastRealm;
+}
+let fireIntensity=.8;
+const fireSlider=document.querySelector('#fire-strength');
+fireSlider.addEventListener('input',()=>{fireIntensity=Number(fireSlider.value)/100;document.querySelector('#fire-value').textContent=fireSlider.value+'%';});
+function defaultPortal(){return {x:w<=700?w*.5:w*.705,y:w<=700?540:h*.49,r:w<=700?Math.min(w*.31,142):Math.min(w*.205,h*.315),born:performance.now()-1000,realmIndex:lastRealm};}
+function updateReadout(mode){stageState.textContent=mode==='active'?'GATEWAY ESTABLISHED':mode==='drawing'?'TRACING GESTURE':mode==='preview'?'PREVIEW MODE':'AWAITING GESTURE';energy.textContent=mode==='active'?'100 %':mode==='drawing'?'CHARGING':'STANDBY';caption.textContent=mode==='active'?'GATEWAY / '+portalRealms[portal.realmIndex].label:'THE NEXT DIMENSION IS IN YOUR HANDS';}
+function openGateway(shape){const now=performance.now();portal={...shape,born:now,enteredAt:stream&&toonReady?now:null,realmIndex:nextRealm()};preview=false;updateReadout('active');status.textContent=portalRealms[portal.realmIndex].name+'에 포털이 열렸어요. '+(stream?'카메라를 향해 손바닥을 펼쳐 마법진을 소환하세요.':'웹캠을 연결하면 당신의 모습이 나타나요.');}
+function resize(){const oldW=w,oldH=h;w=workspace.clientWidth;h=workspace.clientHeight;const d=Math.min(devicePixelRatio||1,1.75);for(const [layer,context] of [[canvas,ctx],[landscape,landscapeCtx],[worldCanvas,worldCtx],[subject,subjectCtx]]){layer.width=Math.round(w*d);layer.height=Math.round(h*d);context.setTransform(d,0,0,d,0,0);}if(preview)portal=defaultPortal();else if(portal&&oldW&&oldH){portal.x*=w/oldW;portal.y*=h/oldH;portal.r*=Math.min(w/oldW,h/oldH);}points=[];drawing=false;activePointer=null;}
+addEventListener('resize',resize);resize();
+// Input adapter: future hand landmarks can call beginStroke / moveStroke / endStroke.
+function beginStroke(x,y){if(preview){portal=null;preview=false;}points=[{x,y}];drawing=true;updateReadout('drawing');}
+function moveStroke(x,y){if(drawing&&Math.hypot(x-points.at(-1).x,y-points.at(-1).y)>3)points.push({x,y});}
+function endStroke(){if(!drawing)return;drawing=false;const result=recognizeCircle(points);if(result){openGateway(result);}else{updateReadout(portal?'active':'idle');status.textContent='조금 더 둥글게, 시작점 가까이 돌아와 원을 완성해 주세요.';}points=[];}
+function recognizeCircle(p){if(p.length<16)return null;const xs=p.map(q=>q.x),ys=p.map(q=>q.y),bw=Math.max(...xs)-Math.min(...xs),bh=Math.max(...ys)-Math.min(...ys),x=(Math.max(...xs)+Math.min(...xs))/2,y=(Math.max(...ys)+Math.min(...ys))/2,r=(bw+bh)/4;if(r<35||Math.min(bw,bh)/Math.max(bw,bh)<.65||Math.hypot(p[0].x-p.at(-1).x,p[0].y-p.at(-1).y)>r*.65)return null;let error=0,length=0,turn=0;for(let i=0;i<p.length;i++){error+=Math.abs(Math.hypot(p[i].x-x,p[i].y-y)-r);if(i){length+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);let a=Math.atan2(p[i].y-y,p[i].x-x)-Math.atan2(p[i-1].y-y,p[i-1].x-x);turn+=Math.atan2(Math.sin(a),Math.cos(a));}}return error/p.length/r<.23&&length/r>4.6&&length/r<9&&Math.abs(turn)>5?{x,y,r}:null;}
+function pointerPosition(e){const box=canvas.getBoundingClientRect();return {x:e.clientX-box.left,y:e.clientY-box.top};}
+canvas.addEventListener('pointerdown',e=>{if(activePointer!==null||e.button!==0)return;activePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);const p=pointerPosition(e);beginStroke(p.x,p.y);});
+canvas.addEventListener('pointermove',e=>{if(e.pointerId===activePointer){const p=pointerPosition(e);moveStroke(p.x,p.y);}});
+canvas.addEventListener('pointerup',e=>{if(e.pointerId!==activePointer)return;const p=pointerPosition(e);moveStroke(p.x,p.y);endStroke();activePointer=null;});
+canvas.addEventListener('pointercancel',()=>{drawing=false;points=[];activePointer=null;updateReadout(portal?'active':'idle');});
+canvas.addEventListener('lostpointercapture',()=>{if(drawing){drawing=false;points=[];activePointer=null;updateReadout(portal?'active':'idle');}});
+document.querySelector('#reset').onclick=()=>{portal=null;preview=false;points=[];drawing=false;activePointer=null;updateReadout('idle');status.textContent='새로운 원을 그려 포털을 열어보세요.';};
+document.querySelector('#demo').onclick=()=>{openGateway(defaultPortal());points=[];drawing=false;activePointer=null;};
+function stopCamera(preserveIntent=false){
+ try{if(preserveIntent&&(stream||cameraWanted))sessionStorage.setItem('portal-resume-camera','1');else sessionStorage.removeItem('portal-resume-camera');}catch{}
+ cameraWanted=false;
+ cameraSession++;clearTimeout(captureTimer);captureTimer=null;
+ palms=[];handsReady=false;lastHandFrame=-Infinity;
+ const previous=stream;stream=null;previous?.getTracks().forEach(track=>track.stop());
+ setHandHint('웹캠을 연결하면 손바닥 마법진을 사용할 수 있어요.');
+ personReady=false;toonReady=false;personUpdated=0;cameraPortalInitialized=false;pc.clearRect(0,0,person.width,person.height);subjectCtx.clearRect(0,0,w,h);
+ video.srcObject=null;cameraButton.disabled=false;cameraLabel.textContent='웹캠 연결';cameraButton.setAttribute('aria-pressed','false');
+ document.querySelector('#input-source').innerHTML='MOUSE<em>/ TOUCH</em>';
+}
+cameraButton.onclick=async function(){
+ if(stream){stopCamera();status.textContent='웹캠 연결을 해제했어요. 마우스나 터치로 계속 실험할 수 있어요.';return;}
+ const session=++cameraSession;cameraWanted=true;this.disabled=true;cameraLabel.textContent='연결 중…';
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('unsupported');
+  let acquired;
+  try{acquired=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'}},audio:false});}
+  catch(error){if(!['OverconstrainedError','ConstraintNotSatisfiedError'].includes(error.name))throw error;acquired=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
+  if(session!==cameraSession){acquired.getTracks().forEach(track=>track.stop());return;}
+  stream=acquired;video.srcObject=stream;await video.play();if(session!==cameraSession)return;
+  for(const track of stream.getVideoTracks())track.addEventListener('ended',()=>{if(session!==cameraSession)return;stopCamera();status.textContent='카메라 연결이 종료됐어요. 다시 연결할 수 있어요.';},{once:true});
+  cameraLabel.textContent='웹캠 해제';this.setAttribute('aria-pressed','true');document.querySelector('#input-source').innerHTML='CAMERA<em>+ DRAW</em>';
+  status.textContent='카메라가 연결됐어요. 인물 인식과 그림체 변환을 준비하고 있어요…';
+  // Model loading never blocks the disconnect control or exposes the original room.
+  prepareSegmentation(session).catch(()=>{if(session!==cameraSession)return;stopCamera();cameraLabel.textContent='웹캠 다시 시도';status.textContent='인물 분리를 불러오지 못했어요. 인터넷 연결을 확인하고 웹캠을 다시 연결해 주세요.';});
+  prepareHands(session).catch(()=>{if(session!==cameraSession)return;handsReady=false;palms=[];setHandHint('손 인식을 불러오지 못했어요. 인터넷 연결 후 웹캠을 다시 연결해 주세요.','error');});
+ }catch(e){if(session!==cameraSession)return;stopCamera();cameraLabel.textContent='웹캠 다시 시도';
+  const errors={NotAllowedError:'카메라 접근이 허용되지 않았어요. 주소창의 카메라 권한을 허용한 뒤 다시 시도해 주세요.',PermissionDeniedError:'주소창의 카메라 권한을 허용한 뒤 다시 시도해 주세요.',NotFoundError:'연결된 카메라를 찾지 못했어요. 웹캠 연결을 확인해 주세요.',DevicesNotFoundError:'연결된 카메라를 찾지 못했어요.',NotReadableError:'카메라가 다른 앱이나 브라우저에서 사용 중이거나 장치에서 응답하지 않아요. 다른 카메라 화면을 끈 뒤 다시 시도해 주세요.',TrackStartError:'카메라가 다른 앱에서 사용 중이에요. 다른 카메라 화면을 끈 뒤 다시 시도해 주세요.',AbortError:'카메라 연결이 중단됐어요. 다시 시도해 주세요.',SecurityError:'이 브라우저에서 카메라 접근이 제한되어 있어요. Chrome 또는 Edge에서 파일을 열어 주세요.'};
+  status.textContent=errors[e.name]||(e.message==='unsupported'?'현재 브라우저에서 카메라 기능을 제공하지 않아요. Chrome 또는 Edge에서 열어 주세요.':'카메라 연결 오류 ('+(e.name||'unknown')+'). 웹캠을 확인하고 다시 시도해 주세요.');
+ }
+ finally{if(session===cameraSession)this.disabled=false;}
+};
+// Keyboard access matches the existing visible portal and reset buttons.
+addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelector('#reset').click();if(e.key==='Enter'&&!['BUTTON','INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();document.querySelector('#demo').click();}});
+addEventListener('pagehide',()=>{
+ try{if(portal&&!preview)sessionStorage.setItem('portal-resume-gateway',JSON.stringify({x:portal.x/w,y:portal.y/h,r:portal.r/Math.min(w,h),realmIndex:portal.realmIndex}));else sessionStorage.removeItem('portal-resume-gateway');}catch{}
+ stopCamera(true);
+});
+// Independent layers: snow outside, cosmos inside, transparent person, portal effects.
+const person=document.createElement('canvas'),pc=person.getContext('2d');
+const paintedPerson=document.createElement('canvas'),paintCtx=paintedPerson.getContext('2d',{willReadFrequently:true});
+const personProbe=document.createElement('canvas'),personProbeCtx=personProbe.getContext('2d',{willReadFrequently:true});
+let toonReady=false,toonRenderer=null,toonRendererTried=false;
+let personReady=false,personUpdated=0,segmenter=null,modelPromise=null,inFlight=null,processingSession=0,cameraPortalInitialized=false;
+const HAND_MODEL_ROOT='https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/';
+let handTracker=null,handModelPromise=null,handInFlight=null,handProcessingSession=0,handsReady=false,lastHandFrame=-Infinity,palms=[];
+function setHandHint(message,mode='waiting'){
+ const element=document.querySelector('#hand-status');if(element.textContent!==message)element.textContent=message;
+ const badge=document.querySelector('#hand-indicator'),label=mode==='active'?'✦ 손바닥 마법진 활성':mode==='loading'?'손 인식 준비 중…':mode==='error'?'손 인식 재연결 필요':stream?'손바닥을 펼쳐보세요':'웹캠 연결 필요';
+ if(badge.textContent!==label)badge.textContent=label;badge.setAttribute('data-mode',mode);
+}
+function loadHands(){
+ if(typeof Hands!=='undefined')return Promise.resolve();if(handModelPromise)return handModelPromise;
+ handModelPromise=new Promise((resolve,reject)=>{
+  const tag=document.createElement('script');tag.src=HAND_MODEL_ROOT+'hands.js';tag.crossOrigin='anonymous';
+  const finish=error=>{clearTimeout(timer);tag.onload=tag.onerror=null;if(error){tag.remove();reject(error);}else resolve();};
+  const timer=setTimeout(()=>finish(Error('hand model timeout')),15000);
+  tag.onload=()=>finish(typeof Hands==='undefined'?Error('hand model missing'):null);tag.onerror=()=>finish(Error('hand model unavailable'));document.head.appendChild(tag);
+ }).catch(error=>{handModelPromise=null;throw error;});return handModelPromise;
+}
+async function prepareHands(session){
+ setHandHint('손바닥 인식을 준비하고 있어요…','loading');await loadHands();if(session!==cameraSession||!stream)return;
+ if(!handTracker){handTracker=new Hands({locateFile:file=>HAND_MODEL_ROOT+file});handTracker.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.5,minTrackingConfidence:.5});handTracker.onResults(updatePalms);}
+ handsReady=true;setHandHint('손 인식 모델을 시작하고 있어요. 잠시 기다려 주세요.','loading');
+}
+function describePalm(landmarks){
+ if(!Array.isArray(landmarks)||landmarks.length<21||landmarks.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return null;
+ const vw=video.videoWidth||640,vh=video.videoHeight||480;
+ const distance=(a,b)=>Math.hypot((a.x-b.x)*vw,(a.y-b.y)*vh);
+ const wrist=landmarks[0],base=distance(wrist,landmarks[9]);if(base<8)return null;
+ let extended=0;
+ for(const [tip,pip,mcp] of [[8,6,5],[12,10,9],[16,14,13],[20,18,17]]){
+  if(distance(wrist,landmarks[tip])>distance(wrist,landmarks[pip])*1.07&&distance(landmarks[tip],landmarks[mcp])>distance(landmarks[pip],landmarks[mcp])*1.15)extended++;
+ }
+ if(extended<3)return null;
+ const center=[0,5,9,13,17].reduce((value,index)=>({x:value.x+landmarks[index].x/5,y:value.y+landmarks[index].y/5}),{x:0,y:0});
+ const span=Math.max(distance(landmarks[5],landmarks[17]),base*.65)/vw;
+ return {x:center.x,y:center.y,span,angle:Math.atan2((landmarks[9].y-wrist.y)*vh,(landmarks[9].x-wrist.x)*vw)+Math.PI/2};
+}
+function updatePalms(results){
+ if(!stream||handProcessingSession!==cameraSession)return;
+ const now=performance.now(),next=[];
+ for(const [index,landmarks] of (results.multiHandLandmarks||[]).slice(0,2).entries()){
+  const detected=describePalm(landmarks);if(!detected)continue;
+  const key=results.multiHandedness?.[index]?.label||String(index),old=palms.find(palm=>palm.key===key&&now-palm.updated<500);
+  const blend=.48;
+  next.push({...detected,key,x:old?old.x+(detected.x-old.x)*blend:detected.x,y:old?old.y+(detected.y-old.y)*blend:detected.y,span:old?old.span+(detected.span-old.span)*blend:detected.span,born:old?.born??now,updated:now});
+ }
+ palms=next;
+ setHandHint(next.length?'손바닥 마법진 활성 · '+next.length+'개의 손 감지':'카메라를 향해 손바닥을 펼쳐보세요. 손가락도 펴주세요.',next.length?'active':'waiting');
+}
+function entrancePose(now){
+ if(reducedMotion.matches||portal?.enteredAt==null)return {progress:1,zoom:1,lift:0,opacity:1};
+ const progress=Math.min(1,Math.max(0,(now-portal.enteredAt)/900)),ease=1-Math.pow(1-progress,3);
+ return {progress,zoom:.72+.28*ease,lift:(1-ease)*portal.r*.28,opacity:Math.min(1,progress*2.5)};
+}
+function cameraPointInPortal(point,now){
+ const target=portal||defaultPortal(),sourceW=personReady?person.width:video.videoWidth,sourceH=personReady?person.height:video.videoHeight;if(!sourceW||!sourceH)return null;
+ const open=reducedMotion.matches?1:Math.min(1,Math.max(0,(now-target.born)/800)),r=target.r*(1-Math.pow(1-open,3));
+ const pose=entrancePose(now),scale=Math.min(r*2/sourceW,r*2/sourceH),pw=sourceW*scale,ph=sourceH*scale;
+ return {x:target.x-(point.x-.5)*pw*pose.zoom,y:target.y+pose.lift+(point.y-.5)*ph*pose.zoom,r:Math.min(r*.44,Math.max(r*.12,point.span*pw*.78))*pose.zoom,portalRadius:r,opacity:open*pose.opacity};
+}
+function drawPalmSpells(now,t){
+ if(!stream||!handsReady)return;
+ const active=palms.filter(palm=>now-palm.updated<450);if(!active.length)return;
+ const radius=cameraPointInPortal(active[0],now)?.portalRadius;if(!radius||radius<1)return;
+ const target=portal||defaultPortal();ctx.save();ctx.beginPath();ctx.arc(target.x,target.y,radius,0,Math.PI*2);ctx.clip();
+ for(const palm of active){
+  const point=cameraPointInPortal(palm,now),appear=reducedMotion.matches?1:Math.min(1,(now-palm.born)/180),fade=Math.min(1,(450-(now-palm.updated))/160);
+  if(point.r<1||appear<=0)continue;
+  ctx.save();ctx.translate(point.x,point.y);ctx.rotate(-palm.angle);drawSigil(ctx,0,0,point.r,t,appear*fade*point.opacity*.95);ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<20;i++){const a=i*2.399+t*.0015,rr=point.r*(1.02+(i%3)*.035);ctx.strokeStyle=i%3?'#ffa73d99':'#ffe4aacc';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);ctx.lineTo(Math.cos(a+.025)*(rr+3+i%5),Math.sin(a+.025)*(rr+3+i%5));ctx.stroke();}
+  ctx.restore();
+ }
+ ctx.restore();
+}
+function drawPortalEntrance(now){
+ if(!portal||preview||reducedMotion.matches)return;
+ const start=Math.max(portal.born,portal.enteredAt??portal.born),age=(now-start)/900;if(age<0||age>=1)return;
+ const{x,y,r}=portal,ease=1-Math.pow(1-age,3),fade=Math.pow(1-age,2);
+ ctx.save();ctx.globalCompositeOperation='lighter';
+ ctx.strokeStyle='rgba(255,207,130,'+fade*.55+')';ctx.lineWidth=1+2*fade;ctx.beginPath();ctx.arc(x,y,r*(1+ease*.42),0,Math.PI*2);ctx.stroke();
+ for(let i=0;i<80;i++){const a=i*2.399963,seed=random(i+2100),rr=r*(.6+age*(.5+seed*.65));ctx.strokeStyle='rgba(255,'+Math.round(170+seed*70)+',100,'+fade*.8+')';ctx.lineWidth=.6+seed;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);ctx.lineTo(x+Math.cos(a)*(rr+5+seed*12),y+Math.sin(a)*(rr+5+seed*12));ctx.stroke();}
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();
+ const glow=ctx.createRadialGradient(x,y,0,x,y,r);glow.addColorStop(0,'rgba(255,238,196,'+fade*.32+')');glow.addColorStop(1,'#ffc37000');ctx.fillStyle=glow;ctx.fillRect(x-r,y-r,r*2,r*2);
+ const sweepY=y-r+ease*r*2,sweep=ctx.createLinearGradient(0,sweepY-r*.18,0,sweepY+r*.18);sweep.addColorStop(0,'#fff2bd00');sweep.addColorStop(.5,'rgba(255,231,170,'+fade*.48+')');sweep.addColorStop(1,'#fff2bd00');ctx.fillStyle=sweep;ctx.fillRect(x-r,sweepY-r*.18,r*2,r*.36);
+ ctx.restore();
+}
+// Load the optional model only after the user starts the camera. The UI works offline.
+function loadSegmentation(){
+ if(typeof SelfieSegmentation!=='undefined')return Promise.resolve();if(modelPromise)return modelPromise;
+ modelPromise=new Promise((resolve,reject)=>{const tag=document.createElement('script');tag.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js';tag.crossOrigin='anonymous';const timer=setTimeout(()=>reject(Error('model timeout')),15000);tag.onload=()=>{clearTimeout(timer);resolve();};tag.onerror=()=>{clearTimeout(timer);reject(Error('model unavailable'));};document.head.appendChild(tag);}).catch(error=>{modelPromise=null;throw error;});return modelPromise;
+}
+async function prepareSegmentation(session){
+ await loadSegmentation();
+ if(session!==cameraSession||!stream)return;
+ if(typeof SelfieSegmentation==='undefined')throw Error('model load');
+ if(!segmenter){segmenter=new SelfieSegmentation({locateFile:file=>'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/'+file});segmenter.setOptions({modelSelection:1});segmenter.onResults(updatePerson);}
+ status.textContent='인물 인식 모델을 시작하고 있어요. 준비가 끝나면 기본 포털에 자동으로 나타나요…';
+ await processCamera(session);
+}
+async function processCamera(session){
+ if(inFlight){try{await inFlight;}catch{}}
+ if(session!==cameraSession||!stream)return;
+ processingSession=session;
+ try{inFlight=segmenter.send({image:video});await inFlight;}
+ catch(error){if(session===cameraSession){personReady=false;status.textContent='인물 분리가 중단됐어요. 웹캠을 해제한 뒤 다시 연결해 주세요.';}return;}
+ finally{inFlight=null;}
+ if(session===cameraSession&&stream&&handsReady&&!handInFlight&&performance.now()-lastHandFrame>=110){
+  handProcessingSession=session;lastHandFrame=performance.now();
+  // Hand-model warmup must never freeze the comic video pipeline.
+  const work=Promise.resolve().then(()=>handTracker.send({image:video}));handInFlight=work;
+  const watchdog=setTimeout(()=>{if(session===cameraSession&&handInFlight===work){handsReady=false;palms=[];setHandHint('손 인식 로딩이 지연돼요. 인터넷 연결 후 페이지를 새로고침해 주세요.','error');}},25000);
+  work.catch(()=>{if(session===cameraSession){handsReady=false;palms=[];setHandHint('손 인식이 중단됐어요. 웹캠을 다시 연결해 주세요.','error');}}).finally(()=>{clearTimeout(watchdog);if(handInFlight===work)handInFlight=null;});
+ }
+ if(session===cameraSession&&stream)captureTimer=setTimeout(()=>processCamera(session),65);
+}
+function updatePerson(results){
+ if(!stream||processingSession!==cameraSession||!results.image||!results.segmentationMask)return;
+ const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return;
+ const scale=Math.min(1,640/vw,480/vh),pw=Math.max(1,Math.round(vw*scale)),ph=Math.max(1,Math.round(vh*scale));
+ if(person.width!==pw||person.height!==ph){person.width=pw;person.height=ph;}
+ // A fresh alpha matte for every frame: no retained room pixels or horizontal filling.
+ pc.save();pc.clearRect(0,0,pw,ph);pc.globalCompositeOperation='source-over';pc.filter='blur(1px)';
+ pc.drawImage(results.segmentationMask,0,0,pw,ph);pc.filter='none';pc.globalCompositeOperation='source-in';pc.drawImage(results.image,0,0,pw,ph);pc.restore();
+ if(!hasPersonPixels()){
+  personReady=false;toonReady=false;paintCtx.clearRect(0,0,paintedPerson.width,paintedPerson.height);subjectCtx.clearRect(0,0,w,h);
+  status.textContent='인물을 찾는 중이에요. 카메라에 얼굴과 상반신이 보이도록 앉아 주세요.';return;
+ }
+ const wasToonReady=toonReady;toonReady=paintPerson();
+ if(!personReady||(!wasToonReady&&toonReady))status.textContent=toonReady?'코믹스 변환 완료. 포털 속에서 움직이거나 손바닥을 펼쳐보세요.':'코믹스 그림체를 준비하고 있어요. 잠시 기다려 주세요.';
+ personReady=true;personUpdated=performance.now();
+ if(toonReady&&!cameraPortalInitialized){cameraPortalInitialized=true;if(!portal||preview)openGateway(defaultPortal());}
+ if(toonReady&&portal&&!preview&&portal.enteredAt==null)portal.enteredAt=personUpdated;
+}
+function hasPersonPixels(){
+ try{
+  personProbe.width=48;personProbe.height=Math.max(1,Math.round(48*person.height/person.width));
+  personProbeCtx.clearRect(0,0,personProbe.width,personProbe.height);personProbeCtx.drawImage(person,0,0,personProbe.width,personProbe.height);
+  const pixels=personProbeCtx.getImageData(0,0,personProbe.width,personProbe.height).data;let visible=0;
+  for(let i=3;i<pixels.length;i+=4)if(pixels[i]>48)visible++;
+  return visible>=Math.max(4,personProbe.width*personProbe.height*.004);
+ }catch{return true;}
+}
+// Live cel shading preserves the user's pose and expression; no photographic frame is displayed.
+function makeToonRenderer(){
+ const surface=document.createElement('canvas');
+ const gl=surface.getContext('webgl',{alpha:true,premultipliedAlpha:false,preserveDrawingBuffer:true,antialias:false});
+ if(!gl)return null;
+ try{
+  const vertex='attribute vec2 position;varying vec2 uv;void main(){uv=position*.5+.5;gl_Position=vec4(position,0.,1.);}';
+  const fragment=`precision mediump float;
+   varying vec2 uv;uniform sampler2D image;uniform vec2 pixel;
+   float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
+   void main(){
+    vec4 original=texture2D(image,uv);if(original.a<.015){gl_FragColor=vec4(0.);return;}
+    vec3 color=vec3(0.);float weight=0.;
+    for(int x=-2;x<=2;x++){for(int y=-2;y<=2;y++){
+     vec4 s=texture2D(image,uv+vec2(float(x),float(y))*pixel*1.25);
+     float w=exp(-float(x*x+y*y)*.22)*s.a;
+     color+=s.rgb*w;weight+=w;
+    }}
+    color/=max(weight,.001);
+    float value=lum(color);
+    // Quantize light, not each RGB channel, to avoid pink/green facial patches.
+    float tone=clamp((value-.5)*1.15+.52,0.,1.);
+    float band=floor(sqrt(tone)*6.+.5)/6.;band*=band;
+    color=mix(vec3(value),color,1.22)*(mix(tone,band,.62)/max(value,.04));
+    color=mix(color,vec3(1.,.95,.84),smoothstep(.72,.95,tone)*.12);
+    float dx=lum(texture2D(image,uv+vec2(pixel.x*1.6,0.)).rgb)-lum(texture2D(image,uv-vec2(pixel.x*1.6,0.)).rgb);
+    float dy=lum(texture2D(image,uv+vec2(0.,pixel.y*1.6)).rgb)-lum(texture2D(image,uv-vec2(0.,pixel.y*1.6)).rgb);
+    float edge=smoothstep(.06,.22,length(vec2(dx,dy)));
+    vec3 ink=vec3(.045,.04,.075);
+    vec2 paper=uv/pixel;
+    float radius=mix(.06,.27,1.-smoothstep(.18,.75,tone));
+    float dotInk=1.-smoothstep(radius-.025,radius+.025,length(fract(paper/6.)-.5));
+    color=mix(color,ink,dotInk*.2*(1.-smoothstep(.7,.9,tone)));
+    float hatch=(1.-step(1.,mod(paper.x+paper.y,8.)))*(1.-smoothstep(.12,.28,tone));
+    color=mix(color,ink,hatch*.2);color=mix(color,ink,edge*.9);
+    gl_FragColor=vec4(clamp(color,0.,1.),original.a);
+   }`;
+  const compile=(type,source)=>{const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw Error('toon shader');return shader;};
+  const program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))return null;
+  gl.useProgram(program);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const location=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(location);gl.vertexAttribPointer(location,2,gl.FLOAT,false,0,0);
+  const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);const pixel=gl.getUniformLocation(program,'pixel');
+  return {surface,render(source){if(gl.isContextLost())return false;if(surface.width!==source.width||surface.height!==source.height){surface.width=source.width;surface.height=source.height;}gl.viewport(0,0,surface.width,surface.height);gl.useProgram(program);gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);gl.uniform2f(pixel,1/source.width,1/source.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,6);return true;}};
+ }catch{return null;}
+}
+function paintPerson(){
+ const scale=Math.min(1,400/person.width,320/person.height),pw=Math.max(1,Math.round(person.width*scale)),ph=Math.max(1,Math.round(person.height*scale));
+ if(paintedPerson.width!==pw||paintedPerson.height!==ph){paintedPerson.width=pw;paintedPerson.height=ph;}
+ if(!toonRendererTried){toonRendererTried=true;toonRenderer=makeToonRenderer();}
+ paintCtx.clearRect(0,0,pw,ph);
+ try{
+  if(toonRenderer?.render(person)){paintCtx.drawImage(toonRenderer.surface,0,0,pw,ph);return true;}
+  // Software fallback also transforms the pixels; it never displays a raw face.
+  paintCtx.drawImage(person,0,0,pw,ph);const image=paintCtx.getImageData(0,0,pw,ph),src=new Uint8ClampedArray(image.data),data=image.data;
+  for(let y=0;y<ph;y++)for(let x=0;x<pw;x++){
+   const k=(y*pw+x)*4;if(src[k+3]<4)continue;let rr=0,gg=0,bb=0,total=0;
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const sx=Math.max(0,Math.min(pw-1,x+dx)),sy=Math.max(0,Math.min(ph-1,y+dy)),q=(sy*pw+sx)*4,a=src[q+3]/255;rr+=src[q]*a;gg+=src[q+1]*a;bb+=src[q+2]*a;total+=a;}
+   rr/=Math.max(total,.01);gg/=Math.max(total,.01);bb/=Math.max(total,.01);
+   const luminance=(rr*.299+gg*.587+bb*.114)/255,tone=Math.max(0,Math.min(1,(luminance-.5)*1.15+.52));
+   let band=Math.round(Math.sqrt(tone)*6)/6;band*=band;const light=(tone*.38+band*.62)/Math.max(luminance,.04);
+   const left=(y*pw+Math.max(0,x-1))*4,right=(y*pw+Math.min(pw-1,x+1))*4,up=(Math.max(0,y-1)*pw+x)*4,down=(Math.min(ph-1,y+1)*pw+x)*4;
+   const lum=q=>src[q]*.299+src[q+1]*.587+src[q+2]*.114;
+   const edge=Math.min(.9,Math.max(0,(Math.hypot(lum(left)-lum(right),lum(up)-lum(down))/255-.06)/.16)*.9);
+   const dot=Math.hypot((x%6+.5)/6-.5,(y%6+.5)/6-.5)<.06+.21*(1-Math.max(0,Math.min(1,(tone-.18)/.57)));
+   const ink=Math.max(edge,dot&&tone<.85?.18:0,(x+y)%8===0&&tone<.25?.2:0);
+   const gray=luminance*255;
+   data[k]=Math.max(0,Math.min(255,((gray+(rr-gray)*1.22)*light)*(1-ink)+12*ink));data[k+1]=Math.max(0,Math.min(255,((gray+(gg-gray)*1.22)*light)*(1-ink)+10*ink));data[k+2]=Math.max(0,Math.min(255,((gray+(bb-gray)*1.22)*light)*(1-ink)+19*ink));
+  }
+  paintCtx.putImageData(image,0,0);return true;
+ }catch{paintCtx.clearRect(0,0,pw,ph);return false;}
+}
+function drawSubject(now){
+ subjectCtx.clearRect(0,0,w,h);
+ if(!stream||!personReady||!toonReady||!portal||preview||now-personUpdated>3000)return;
+ const open=reducedMotion.matches?1:Math.min(1,Math.max(0,(now-portal.born)/800)),r=portal.r*(1-Math.pow(1-open,3));
+ if(r<=.5)return;
+ // Fit the camera subject to the drawn portal, never to the full stage.
+ const scale=Math.min(r*2/person.width,r*2/person.height),pw=person.width*scale,ph=person.height*scale;
+ const pose=entrancePose(now);
+ subjectCtx.save();subjectCtx.beginPath();subjectCtx.arc(portal.x,portal.y,r,0,Math.PI*2);subjectCtx.clip();
+ subjectCtx.translate(portal.x,portal.y+pose.lift);subjectCtx.scale(-pose.zoom,pose.zoom);subjectCtx.globalAlpha=open*pose.opacity;
+ if(pose.progress<1)subjectCtx.filter='brightness('+(1+(1-pose.progress)*1.8)+')';
+ subjectCtx.drawImage(paintedPerson,-pw/2,-ph/2,pw,ph);
+ subjectCtx.restore();
+}
+
+const TAU=Math.PI*2;
+const random=i=>{const n=Math.sin(i*127.1+311.7)*43758.5453;return n-Math.floor(n);};
+// Build the flame from layered, moving contours; sparks travel out of the ring.
+function drawFireRing(x,y,r,t){
+  const glow=ctx.createRadialGradient(x,y,r*.76,x,y,r*1.48);
+  glow.addColorStop(0,'#ff6b0000');glow.addColorStop(.34,'#ff660023');glow.addColorStop(.48,'#ff8a0038');glow.addColorStop(.67,'#ff5e0016');glow.addColorStop(1,'#ff3c0000');
+  ctx.fillStyle=glow;ctx.fillRect(x-r*1.5,y-r*1.5,r*3,r*3);
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  // Thin, tangential filaments follow the reference's flowing golden energy.
+  ctx.lineCap='round';
+  for(let i=0;i<78;i++){
+    const seed=random(i+3),a=i*TAU/78+t*.00024,base=r+Math.sin(i*7+t*.004)*3;
+    const reach=(5+seed*16)*(r/200)*fireIntensity,sweep=.045+seed*.14;
+    ctx.strokeStyle=i%3?'#ffb536b0':'#fff0acd0';ctx.lineWidth=.5+seed*1.5;
+    ctx.beginPath();ctx.moveTo(x+Math.cos(a-sweep)*base,y+Math.sin(a-sweep)*base);
+    ctx.quadraticCurveTo(x+Math.cos(a)*(base+reach*1.6),y+Math.sin(a)*(base+reach*1.6),x+Math.cos(a+sweep)*(base+reach*.25),y+Math.sin(a+sweep)*(base+reach*.25));ctx.stroke();
+  }
+  for(let i=0;i<14;i++){
+    const a=i*2.399+t*.0005,rr=r+(random(i+40)-.5)*7;
+    ctx.strokeStyle=i%3?'#ffbf5aaa':'#fff0b5cc';ctx.lineWidth=i%3?1:2;ctx.beginPath();ctx.arc(x,y,Math.max(.1,rr),a,a+.08+random(i+60)*.24);ctx.stroke();
+  }
+  for(let layer=0;layer<4;layer++){
+    ctx.beginPath();
+    for(let i=0;i<=240;i++){
+      const a=i/240*TAU,noise=Math.sin(a*19-t*.003)*2+Math.sin(a*37+t*.004)*1.3+Math.sin(a*61-t*.005)*.8;
+      const rr=r+noise*(layer===3?.35:1)+layer*.8;
+      const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.closePath();ctx.strokeStyle=['#ff5e1680','#ff9d32cc','#ffd17eff','#fff1c7'][layer];ctx.lineWidth=[9,4,1.8,.65][layer];ctx.shadowColor='#ff6a00';ctx.shadowBlur=layer===0?22:7;ctx.stroke();
+  }
+  ctx.shadowBlur=0;
+  drawSigil(ctx,x,y,r*.91,t,.15);
+  // Rotating concentric glyphs give the fiery gateway its spell-circle character.
+  ctx.save();ctx.translate(x,y);ctx.rotate(t*.00007);ctx.strokeStyle='#ffbd6645';ctx.lineWidth=.7;
+  ctx.beginPath();ctx.arc(0,0,r*.92,0,TAU);ctx.stroke();
+  for(let i=0;i<36;i++){ctx.save();ctx.rotate(i*TAU/36);ctx.beginPath();ctx.moveTo(r*.94,0);ctx.lineTo(r*(i%3===0?.985:.962),0);if(i%3===0){ctx.moveTo(r*.95,-3);ctx.lineTo(r*.97,2);ctx.lineTo(r*.98,-3);}ctx.stroke();ctx.restore();}ctx.restore();
+  drawFireParticles(ctx,x,y,r,t,fireIntensity);
+  ctx.restore();
+}
+// Fixed particle budgets keep the effect stable during long webcam sessions.
+function drawFireParticles(context,x,y,r,t,intensity){
+  const count=Math.round(360*intensity),scale=Math.max(.4,r/200);
+  context.save();context.globalCompositeOperation='lighter';context.lineCap='round';
+  for(let i=0;i<count;i++){
+    const seed=random(i+90),life=(t*.00048*(.65+seed*.7)+random(i+210))%1;
+    const a=random(i+70)*TAU+t*.00016-life*.28,ca=Math.cos(a),sa=Math.sin(a);
+    const speed=(45+random(i+340)*155)*scale,swirl=(12+seed*48)*scale,gravity=(18+seed*30)*scale;
+    const px=x+ca*(r+life*speed)-sa*life*swirl,py=y+sa*(r+life*speed)+ca*life*swirl+life*life*gravity;
+    const vx=ca*speed-sa*swirl,vy=sa*speed+ca*swirl+2*life*gravity,norm=Math.hypot(vx,vy)||1;
+    const tail=(3+seed*15)*scale*(1-life),alpha=Math.min(1,life*12)*Math.pow(1-life,1.2);
+    context.strokeStyle=`rgba(255,${Math.round(145+seed*95)},${Math.round(35+seed*120)},${alpha})`;
+    context.lineWidth=seed>.86?1.65:.6+seed*.7;
+    context.beginPath();context.moveTo(px,py);context.lineTo(px-vx/norm*tail,py-vy/norm*tail);context.stroke();
+    if(seed>.8){context.fillStyle=`rgba(255,240,188,${alpha})`;context.fillRect(px-.65,py-.65,1.3,1.3);}
+  }
+  // A travelling ignition point sheds a fan of longer, brighter sparks.
+  const burstTime=t*.00115,phase=burstTime%1,origin=Math.floor(burstTime)*2.39996;
+  for(let i=0;i<Math.round(48*intensity);i++){
+    const seed=random(i+1600),age=(phase+seed*.32)%1,a=origin+(seed-.5)*.48;
+    const ca=Math.cos(a),sa=Math.sin(a),distance=age*(80+seed*145)*scale;
+    const px=x+ca*(r+distance)-sa*age*40*scale,py=y+sa*(r+distance)+ca*age*40*scale+age*age*55*scale;
+    context.strokeStyle=`rgba(255,${Math.round(185+seed*65)},${Math.round(70+seed*110)},${Math.pow(1-age,1.7)*.85})`;
+    context.lineWidth=.8+seed;context.beginPath();context.moveTo(px,py);context.lineTo(px-ca*(6+seed*15)*scale,py-sa*(6+seed*15)*scale);context.stroke();
+  }
+  context.restore();
+}
+function drawWorld(x,y,r,t){
+  const ctx=worldCtx;
+  const realm=portalRealms[portal?.realmIndex??0],image=realm.image;
+  const base=ctx.createLinearGradient(x-r,y-r,x+r,y+r);base.addColorStop(0,realm.colors[0]);base.addColorStop(.5,realm.colors[1]);base.addColorStop(1,realm.colors[2]);ctx.fillStyle=base;ctx.fillRect(x-r,y-r,r*2,r*2);
+  if(image.complete&&image.naturalWidth){
+    const scale=Math.max(r*2/image.naturalWidth,r*2/image.naturalHeight),iw=image.naturalWidth*scale,ih=image.naturalHeight*scale;
+    ctx.drawImage(image,x-iw/2,y-ih/2,iw,ih);
+  }else{
+    for(let i=0;i<5;i++){const nx=x+Math.sin(i*2.1+t*.00003)*r*.65,ny=y+Math.cos(i*1.8)*r*.6,g=ctx.createRadialGradient(nx,ny,0,nx,ny,r*.8);g.addColorStop(0,i%2?'#923de04a':'#3594e34a');g.addColorStop(1,'#161d4300');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
+  }
+  ctx.save();
+  for(let i=0;i<60;i++){
+    const px=x+(random(i+1100)*2-1)*r,py=y+(random(i+1200)*2-1)*r;
+    ctx.globalAlpha=.15+.4*(.5+.5*Math.sin(t*.001+i));ctx.fillStyle=realm.spark;ctx.fillRect(px,py,random(i+1300)>.88?1.8:.8,random(i+1300)>.88?1.8:.8);
+  }
+  ctx.restore();
+  const vignette=ctx.createRadialGradient(x,y,r*.5,x,y,r);vignette.addColorStop(0,'#00000000');vignette.addColorStop(1,'#05061760');ctx.fillStyle=vignette;ctx.fillRect(x-r,y-r,r*2,r*2);
+}
+function drawSnowfield(context,t,flakes=true){
+  const sky=context.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#172b45');sky.addColorStop(.6,'#9aaec1');sky.addColorStop(1,'#e3ebf1');context.fillStyle=sky;context.fillRect(0,0,w,h);
+  if(snowImage.complete&&snowImage.naturalWidth){
+    const scale=Math.max(w/snowImage.naturalWidth,h/snowImage.naturalHeight),iw=snowImage.naturalWidth*scale,ih=snowImage.naturalHeight*scale;
+    context.drawImage(snowImage,(w-iw)/2,(h-ih)/2,iw,ih);
+  }else{
+    // A native snowy fallback stays available if the optional artwork cannot load.
+    for(let layer=0;layer<3;layer++){
+      context.beginPath();context.moveTo(0,h);
+      for(let i=0;i<=16;i++)context.lineTo(i*w/16,h*(.46+layer*.13)-random(i+layer*30)*h*.25);
+      context.lineTo(w,h);context.closePath();context.fillStyle=['#859eb6','#bbcbd8','#e0e8ed'][layer];context.fill();
+    }
+  }
+  if(!flakes)return;
+  context.save();
+  for(let i=0;i<72;i++){
+    const depth=.3+random(i+900),px=(random(i+700)*w+Math.sin(t*.00012+i)*20+t*.006*depth)%(w+12),py=(random(i+800)*h+t*.018*depth)%(h+12);
+    context.globalAlpha=.12+depth*.23;context.fillStyle='#edf7ff';context.beginPath();context.arc(px-6,py-6,.6+depth,0,TAU);context.fill();
+  }
+  context.restore();
+}
+// Reference-inspired spell geometry, rendered natively so it stays crisp at any size.
+function drawSigil(context,x,y,r,t,opacity=1){
+  context.save();context.translate(x,y);context.rotate(t*.00012);context.globalAlpha=opacity;context.globalCompositeOperation='lighter';
+  context.strokeStyle='#ffb64f';context.shadowColor='#ff6600';context.shadowBlur=9;context.lineWidth=1;
+  for(const scale of [1,.95,.82,.76,.55]){context.beginPath();context.arc(0,0,r*scale,0,TAU);context.stroke();}
+  context.shadowBlur=3;
+  for(let i=0;i<48;i++){
+    context.save();context.rotate(i*TAU/48);const a=r*.86,b=r*.915,mark=(i*7)%5;
+    context.beginPath();context.moveTo(a,-2);context.lineTo(b,mark-2);context.lineTo(a+2,3);
+    if(i%2){context.moveTo(a,0);context.lineTo(b,0);}else{context.moveTo(b,-3);context.lineTo(b,3);}context.stroke();context.restore();
+  }
+  context.rotate(-t*.00027);
+  for(let layer=0;layer<3;layer++){
+    const count=layer===2?6:3,rotation=layer*Math.PI/3;
+    context.beginPath();for(let i=0;i<=count;i++){const a=i*TAU/count+rotation,rr=r*(layer===2?.54:.74);const px=Math.cos(a)*rr,py=Math.sin(a)*rr;i?context.lineTo(px,py):context.moveTo(px,py);}context.stroke();
+  }
+  for(let i=0;i<8;i++){const a=i*TAU/8;context.beginPath();context.arc(Math.cos(a)*r*.66,Math.sin(a)*r*.66,1.2,0,TAU);context.stroke();}
+  context.restore();
+}
+function drawSpellCursor(now,t){
+  spellCtx.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=embers.length-1;i>=0;i--){const e=embers[i],age=(now-e.born)/650;if(age>=1){embers.splice(i,1);continue;}spellCtx.save();spellCtx.globalAlpha=(1-age)*.65;spellCtx.strokeStyle='#ffc16c';spellCtx.lineWidth=1;spellCtx.beginPath();spellCtx.moveTo(e.x+Math.sin(e.seed*20)*age*18,e.y-age*22);spellCtx.lineTo(e.x+Math.sin(e.seed*20)*age*18-3,e.y-age*22+6);spellCtx.stroke();spellCtx.restore();}
+  if(!cursor.visible)return;
+  const alpha=cursor.type==='touch'?.65:Math.max(.35,Math.min(1,1-(now-cursor.lastMove-1500)/650));
+  if(alpha<=0)return;
+  const r=(innerWidth<=700?43:58)*(drawing?1.15:1);
+  drawSigil(spellCtx,cursor.x,cursor.y,r,t,alpha*.85);
+  spellCtx.save();spellCtx.globalAlpha=alpha;
+  const glow=spellCtx.createRadialGradient(cursor.x,cursor.y,0,cursor.x,cursor.y,r*.7);glow.addColorStop(0,'#ffd18c15');glow.addColorStop(1,'#ff800000');spellCtx.fillStyle=glow;spellCtx.fillRect(cursor.x-r,cursor.y-r,r*2,r*2);spellCtx.restore();
+}
+function drawEnvironment(t){
+  const ctx=landscapeCtx;
+  ctx.clearRect(0,0,w,h);
+  drawSnowfield(ctx,t);
+  ctx.save();ctx.strokeStyle='#728b9b09';ctx.lineWidth=1;
+  const grid=44;
+  for(let x=0;x<w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(let y=0;y<h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  const c=defaultPortal();
+  ctx.setLineDash([2,9]);ctx.strokeStyle='#a8b8c00d';ctx.beginPath();ctx.arc(c.x,c.y,c.r*1.38,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle='#a8b8c014';ctx.beginPath();ctx.moveTo(c.x-7,c.y);ctx.lineTo(c.x+7,c.y);ctx.moveTo(c.x,c.y-7);ctx.lineTo(c.x,c.y+7);ctx.stroke();
+  for(let i=0;i<45;i++){const px=random(i+400)*w,py=(random(i+600)*h-t*.004*(.3+random(i)))%h;ctx.fillStyle=`rgba(224,160,101,${.03+random(i+200)*.15})`;ctx.fillRect(px,(py+h)%h,1,1);}
+  ctx.restore();
+}
+function frame(now){
+  const t=reducedMotion.matches?4200:now;
+  ctx.clearRect(0,0,w,h);worldCtx.clearRect(0,0,w,h);drawEnvironment(t);drawSubject(now);
+  if(portal){
+    const{x,y,r,born}=portal,open=reducedMotion.matches?1:Math.min(1,Math.max(0,(now-born)/800)),R=r*(1-Math.pow(1-open,3));
+    if(R>.5){worldCtx.save();worldCtx.beginPath();worldCtx.arc(x,y,R,0,TAU);worldCtx.clip();drawWorld(x,y,R,t);worldCtx.restore();ctx.save();ctx.globalAlpha=open;drawFireRing(x,y,R,t);ctx.restore();
+      const reflection=ctx.createRadialGradient(x,y+r*1.25,0,x,y+r*1.25,r*.75);reflection.addColorStop(0,'#ff7a0014');reflection.addColorStop(1,'#ff7a0000');ctx.save();ctx.translate(x,y+r*1.25);ctx.scale(1,.14);ctx.fillStyle=reflection;ctx.translate(-x,-y-r*1.25);ctx.fillRect(x-r,y+r*.25,r*2,r*2);ctx.restore();
+    }
+  }
+  drawPortalEntrance(now);
+  drawPalmSpells(now,t);
+  if(points.length){
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor='#ff6900';ctx.shadowBlur=18;ctx.strokeStyle='#ff7a22';ctx.lineWidth=6;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.strokeStyle='#ffe4a0';ctx.lineWidth=1.7;ctx.stroke();
+    const p=points.at(-1);ctx.fillStyle='#fff2c3';ctx.beginPath();ctx.arc(p.x,p.y,3,0,TAU);ctx.fill();ctx.restore();
+  }
+  drawSpellCursor(now,t);
+  requestAnimationFrame(frame);
+}requestAnimationFrame(frame);
+
+// Resume only a camera the user had already connected in this same browser tab.
+function restorePortalSession(){
+ try{
+  const saved=JSON.parse(sessionStorage.getItem('portal-resume-gateway')||'null');sessionStorage.removeItem('portal-resume-gateway');
+  if(saved&&[saved.x,saved.y,saved.r,saved.realmIndex].every(Number.isFinite)&&saved.r>0&&Number.isInteger(saved.realmIndex)&&portalRealms[saved.realmIndex]){
+   portal={x:saved.x*w,y:saved.y*h,r:saved.r*Math.min(w,h),realmIndex:saved.realmIndex,born:performance.now()-1000,enteredAt:null};preview=false;lastRealm=saved.realmIndex;updateReadout('active');
+  }
+  if(sessionStorage.getItem('portal-resume-camera')==='1'){sessionStorage.removeItem('portal-resume-camera');cameraButton.click();}
+ }catch{}
+}
+restorePortalSession();addEventListener('pageshow',event=>{if(event.persisted)restorePortalSession();});
+
+</script>
+</body>
+</html>

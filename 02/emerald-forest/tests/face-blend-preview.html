@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>숲 v5 · 카메라 연결 검증</title>
+<style>
+body{margin:0;background:#101b16;color:#dceadd;font:14px system-ui}header{padding:14px 20px}button{padding:9px 14px;margin-right:8px;cursor:pointer}#result{white-space:pre-wrap;font-size:12px}iframe{display:block;width:100%;height:740px;border:0}canvas,img{display:none}
+</style>
+<header>
+  <p>개발 검증용 · 공개 샘플 사진을 가상 카메라로 재생합니다. 실제 카메라는 요청하지 않습니다.</p>
+  <button id="run">전체 검증 시작</button><button id="show">샘플 얼굴 합성 보기</button>
+  <pre id="result">준비 중</pre>
+</header>
+<iframe id="art" title="검증용 숲" src="../fairy-forest-v5.html"></iframe>
+<img id="portrait" src="fixtures/portrait.jpg" alt="검증용 공개 샘플 얼굴">
+<canvas id="feed" width="640" height="480"></canvas>
+<script>
+const frame = document.querySelector('#art');
+const output = document.querySelector('#result');
+const feed = document.querySelector('#feed');
+const paint = feed.getContext('2d');
+const portrait = document.querySelector('#portrait');
+let mode = 'face', requests = 0, streams = [], deferred, ready = false, results = [];
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function until(check, label, timeout = 20000) {
+  const start = performance.now();
+  while (!check()) { if (performance.now() - start > timeout) throw Error(label); await wait(50); }
+}
+function assert(condition, label) {
+  if (!condition) throw Error(label);
+  results.push('PASS · ' + label); output.textContent = results.join('\n');
+}
+function makeStream() { const stream = feed.captureStream(20); streams.push(stream); return stream; }
+function draw() {
+  paint.fillStyle = '#969e93'; paint.fillRect(0, 0, 640, 480);
+  if (mode === 'face' && portrait.complete && portrait.naturalWidth) {
+    const offset = Math.sin(performance.now() / 800) * 14;
+    paint.drawImage(portrait, 240, 30, 340, 400, 150 + offset, 30, 340, 400);
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+frame.addEventListener('load', () => {
+  Object.defineProperty(frame.contentWindow.navigator.mediaDevices, 'getUserMedia', {
+    configurable: true,
+    value: async () => {
+      requests++;
+      if (mode === 'deny') throw new frame.contentWindow.DOMException('Test permission denied', 'NotAllowedError');
+      if (mode === 'defer') return new Promise(resolve => { deferred = resolve; });
+      return makeStream();
+    }
+  });
+  ready = true; output.textContent = '준비 완료 · 실제 카메라 없이 검증할 수 있습니다.';
+});
+const doc = () => frame.contentDocument;
+const camera = () => doc().querySelector('#camera');
+const tracking = () => doc().querySelector('#tracking').textContent;
+const state = () => Number(doc().documentElement.style.getPropertyValue('--presence'));
+function move() {
+  doc().querySelector('#experience').dispatchEvent(new frame.contentWindow.PointerEvent('pointermove', {clientX:frame.clientWidth * .57,clientY:360,pointerType:'mouse',bubbles:true}));
+}
+async function showFace() {
+  await until(() => ready, '작품 로드'); await portrait.decode(); mode = 'face';
+  if (!camera().checked) camera().click();
+  move();
+  await until(() => tracking().includes('실시간 적용'), '샘플 얼굴 검출');
+  output.textContent = '샘플 얼굴이 실시간으로 합성 중입니다. 실제 카메라는 사용하지 않았습니다.';
+}
+document.querySelector('#show').onclick = () => showFace().catch(error => output.textContent = 'FAIL · ' + error.message);
+document.querySelector('#run').onclick = async () => {
+  document.querySelector('#run').disabled = true;
+  try {
+    await until(() => ready, '작품 로드'); await portrait.decode(); results = [];
+    assert(requests === 0, '첫 화면에서 카메라 요청 없음');
+    assert(!!doc().querySelector('#embedded-vision'), '얼굴 인식 파일이 HTML 내부에 포함됨');
+    assert(state() < .01, '첫 화면에 요정 없음');
+    assert(Number(doc().documentElement.style.getPropertyValue('--forest-light')) > .7, '첫 화면부터 숲이 보임');
+    assert(!doc().querySelector('details'), '접힌 메뉴 없이 모든 조작부 표시');
+    assert(doc().querySelector('.camera-dock').getBoundingClientRect().bottom < frame.clientHeight, '웹캠 영역이 화면 오른쪽 아래에 표시');
+    const strength = doc().querySelector('#glow-strength'); strength.value = '150'; strength.dispatchEvent(new frame.contentWindow.Event('input'));
+    assert(doc().querySelector('#glow-strength-value').textContent === '150%', '후광 세기 조절');
+    strength.value = '100'; strength.dispatchEvent(new frame.contentWindow.Event('input'));
+    const faceSize = doc().querySelector('#face-size'); faceSize.value = '125'; faceSize.dispatchEvent(new frame.contentWindow.Event('input'));
+    assert(doc().querySelector('#face-size-value').textContent === '125%', '얼굴 크기 조절');
+    faceSize.value = '100'; faceSize.dispatchEvent(new frame.contentWindow.Event('input'));
+    move(); await until(() => state() > .98, '요정 등장');
+    await wait(150);
+    strength.value = '0'; strength.dispatchEvent(new frame.contentWindow.Event('input')); await wait(150);
+    const artCanvas = doc().querySelector('#magic'), ratio = artCanvas.width / frame.clientWidth;
+    const probeX = Math.round((frame.clientWidth * .57 + 160) * ratio), probeY = Math.round(360 * ratio);
+    assert(artCanvas.getContext('2d').getImageData(probeX, probeY, 1, 1).data[3] === 0, '후광 세기 0%에서 주변 불빛이 실제로 꺼짐');
+    strength.value = '150'; strength.dispatchEvent(new frame.contentWindow.Event('input')); await wait(150);
+    assert(artCanvas.getContext('2d').getImageData(probeX, probeY, 1, 1).data[3] > 0, '후광 세기를 올리면 실제 빛이 나타남');
+    strength.value = '100'; strength.dispatchEvent(new frame.contentWindow.Event('input'));
+    await wait(2200); assert(state() > .98, '마우스를 멈춰도 화면 안에서는 밝기 유지');
+    doc().querySelector('#experience').dispatchEvent(new frame.contentWindow.PointerEvent('pointerleave'));
+    await wait(500); assert(state() > .1 && state() < .8, '화면 이탈 시 서서히 소멸');
+    await until(() => state() < .02, '요정 소멸');
+    assert(Number(doc().documentElement.style.getPropertyValue('--forest-light')) < .25, '화면 이탈 후 숲이 어두워짐');
+    move(); await until(() => state() > .98, '요정 재등장'); assert(true, '돌아오면 요정 재등장');
+    const lavender = doc().querySelector('[data-glow="#c3a0ff"]'); lavender.click();
+    assert(doc().querySelector('#glow-color').value === '#c3a0ff' && lavender.getAttribute('aria-pressed') === 'true', '후광 색상 변경');
+    doc().querySelector('[data-glow="#7bf6b3"]').click();
+    const blob = await (await fetch('../assets/forest.png')).blob();
+    const transfer = new frame.contentWindow.DataTransfer();
+    transfer.items.add(new frame.contentWindow.File([blob], 'test-forest.png', {type:'image/png'}));
+    const input = doc().querySelector('#forest-file'); input.files = transfer.files;
+    input.dispatchEvent(new frame.contentWindow.Event('change'));
+    await until(() => doc().querySelector('#image-status').textContent === 'test-forest.png', '숲 이미지 적용');
+    assert(doc().querySelector('#forest').style.backgroundImage.includes('blob:'), '선택한 숲 이미지가 브라우저 안에서 적용');
+    doc().querySelector('#reset').click(); assert(doc().querySelector('#forest').style.backgroundImage === '', '기본 숲 복원');
+    mode = 'blank'; camera().click();
+    await until(() => camera().checked && !doc().querySelector('#camera-monitor').hidden && doc().querySelector('#camera-label').textContent === '웹캠 켜짐', '가상 웹캠 시작');
+    assert(!doc().querySelector('#camera-monitor').hidden, '웹캠 영상과 상태 표시');
+    mode = 'face'; await until(() => tracking().includes('실시간 적용'), '실제 모델의 샘플 얼굴 검출');
+    assert(true, 'MediaPipe 실제 모델로 얼굴 검출 및 요정 합성');
+    const angle = doc().querySelector('#face-angle');
+    angle.value = '-15'; angle.dispatchEvent(new frame.contentWindow.Event('input')); await wait(180);
+    assert(doc().querySelector('#face-angle-value').textContent === '왼쪽 15°' && tracking().includes('실시간 적용'), '왼쪽 기울기 조절 중 얼굴 합성 유지');
+    angle.value = '15'; angle.dispatchEvent(new frame.contentWindow.Event('input')); await wait(180);
+    assert(doc().querySelector('#face-angle-value').textContent === '오른쪽 15°' && tracking().includes('실시간 적용'), '오른쪽 기울기 조절 중 얼굴 합성 유지');
+    angle.value = '0'; angle.dispatchEvent(new frame.contentWindow.Event('input'));
+    assert(doc().querySelector('#face-angle-value').textContent === '기본 0°', '요정의 기본 고개 각도로 복귀');
+    faceSize.value = '130'; faceSize.dispatchEvent(new frame.contentWindow.Event('input')); await wait(250);
+    assert(tracking().includes('실시간 적용') && doc().querySelector('#face-size-value').textContent === '130%', '얼굴 크기 변경 중 실시간 합성 유지');
+    faceSize.value = '100'; faceSize.dispatchEvent(new frame.contentWindow.Event('input'));
+    mode = 'blank'; await until(() => tracking().includes('기본 요정'), '얼굴 미검출'); assert(true, '얼굴이 사라지면 기본 얼굴로 복귀');
+    camera().click();
+    assert(streams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')), '끄면 모든 카메라 트랙 종료');
+    assert(doc().querySelector('#webcam').srcObject === null, '웹캠 영상 연결 해제');
+    mode = 'defer'; camera().click(); await until(() => !!deferred, '권한 대기'); camera().click();
+    const lateStream = makeStream(); deferred(lateStream); await wait(100);
+    assert(lateStream.getTracks().every(track => track.readyState === 'ended'), '켜는 도중 취소해도 늦게 도착한 카메라 종료');
+    mode = 'deny'; camera().click();
+    await until(() => doc().querySelector('#camera-status').textContent.includes('권한이 꺼져'), '권한 거부 안내');
+    move(); await until(() => state() > .98, '권한 거부 후 마우스'); assert(true, '권한이 거부되어도 마우스 인터랙션 유지');
+    results.push('완료 · ' + results.length + '개 검증 통과 / 실제 기기·권한 확인은 별도'); output.textContent = results.join('\n');
+  } catch (error) { output.textContent += '\nFAIL · ' + error.message; }
+};
+</script>
+</html>

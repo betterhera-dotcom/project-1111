@@ -1,0 +1,5 @@
+Mode: built-in image_gen.
+Output: portal-cosmos-v1.png
+
+Final prompt:
+Use case: stylized-concept. Asset type: square background plate displayed inside a circular magical portal in a live webcam website. Create a cinematic deep-space other-dimension vista, intricate blue-violet nebula clouds, scattered tiny sharp stars, luminous lavender and indigo interstellar dust, a small distant crescent planet in the upper right quadrant, subtle warm starlight accents. Square composition with the important nebula shapes around the upper and outer portions, a darker calm area in the center and lower middle reserved for a separately composited live human face and shoulders. Rich realistic film visual-effects treatment, dramatic depth, restrained color, excellent fine texture. The circular crop will be applied by code: fill the entire square edge to edge with space. No people, no faces, no typography, no UI, no border, no circular ring, no mountains or snow, no watermark.

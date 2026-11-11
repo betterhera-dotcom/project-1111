@@ -1,0 +1,14 @@
+DOCTOR STRANGE / THE SANCTUM
+Created: 2026-11-10
+
+The new HTML is self-contained: generated environment artwork and Cinzel fonts are embedded. It does not replace earlier HTML versions. The camera's optional segmentation model loads only after the camera is started.
+
+References: the three Doctor Strange stills/posters and the three typography references supplied in the reference folder. Used as visual references for golden magical fire, burgundy drapery, the circular Sanctum window, astral blue atmosphere, and cinematic metallic serif lettering. Reference photographs and logos are not inserted into the page.
+
+Typography: Cinzel Regular and Semibold, with a layered metallic gradient, thin outlines, depth shadows, and the horizontal title rule. Font license: SIL Open Font License; full license embedded in the HTML source.
+
+Interactive graphics: a mathematically circular aperture, golden flame particles, concentric glyphs, a real WebGL ray-marched 3D tunnel with carved stone fragments, perspective depth, fog, lighting and pointer parallax. A perspective Canvas fallback remains available if WebGL is unavailable.
+
+Artwork generation: built-in image_gen tool, using the supplied reference images.
+Final artwork prompt:
+Create an original cinematic environment asset for an interactive Doctor Strange-inspired portal website. Use the three provided images as STYLE AND MOOD REFERENCES ONLY: image 1 for molten golden magical energy, image 2 for the Sanctum's great circular occult window and blue astral atmosphere, image 3 for deep crimson cloak reds and dark smoky dimensional fractures. Do not include people, actors, faces, text, film titles, logos, or watermarks. Landscape 16:9 cinematic photorealistic 3D/VFX environment, not a flat illustration or UI mockup. Ancient Sanctum interior with a large circular mullioned window high in the far right background, richly textured bronze and dark carved stone, burgundy drapery at far edges, low mist, shafts of cool blue moonlight and warm amber grazing light, suspended fragments of carved stone implying a warped mirror dimension. An open clear dark space for the live animated circular portal should occupy center-right at 66% image width and 51% height: do NOT paint a portal ring or solid subject there, because the functional animated portal will be drawn over this backdrop. The left 35% should be shadowy quiet negative space for cream serif typography. The floor is polished aged dark stone with subtle gold reflected light, convincing perspective and depth; avoid a spaceship, laboratory grid, Avengers branding, technological HUD, flat vector look, cartoons. Premium theatrical movie still, restrained burgundy/ink black/antique gold/cold astral blue, atmospheric depth, visible material relief.

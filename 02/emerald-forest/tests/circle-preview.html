@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>숲 v6 · 원 그리기 검증</title>
+<style>
+body{margin:0;background:#101b16;color:#dceadd;font:14px system-ui}header{padding:14px 20px}button{padding:9px 14px;margin-right:8px;cursor:pointer}#result{white-space:pre-wrap;font-size:12px}iframe{display:block;width:100%;height:740px;border:0}canvas,img{display:none}
+</style>
+<header>
+  <p>공개 샘플 영상으로 검증합니다. 실제 카메라에 연결하지 않습니다.</p>
+  <button id="run">원 그리기 검증 시작</button>
+  <pre id="result">준비 중</pre>
+</header>
+<iframe id="art" title="검증용 숲" src="../fairy-forest-v6.html"></iframe>
+<img id="pointing" src="fixtures/pointing_up.jpg" alt="검지 포즈 샘플">
+<canvas id="feed" width="640" height="480"></canvas>
+<script>
+const frame = document.querySelector('#art');
+const result = document.querySelector('#result');
+const feed = document.querySelector('#feed');
+const ctx = feed.getContext('2d');
+const image = document.querySelector('#pointing');
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+let ready = false, requests = 0, stream, pathAngle = 0;
+function draw() {
+  ctx.fillStyle = '#dedfdc';
+  ctx.fillRect(0, 0, 640, 480);
+  if (image.complete && image.naturalWidth) {
+    const x = 320 + Math.cos(pathAngle) * 82, y = 190 + Math.sin(pathAngle) * 82;
+    ctx.drawImage(image, 136, 7, 238, 232, x - 163, y - 19, 238, 232);
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+frame.addEventListener('load', () => {
+  Object.defineProperty(frame.contentWindow.navigator.mediaDevices, 'getUserMedia', {
+    configurable: true,
+    value: async () => { requests++; stream = feed.captureStream(22); return stream; },
+  });
+  ready = true;
+  result.textContent = '검증 준비 완료';
+});
+const doc = () => frame.contentDocument;
+const active = () => !doc().querySelector('#clear-circle').hidden;
+const gesture = () => doc().querySelector('#gesture-status').textContent;
+function check(condition, label) {
+  if (!condition) throw Error(label);
+  result.textContent += `PASS · ${label}\n`;
+}
+async function until(predicate, label, milliseconds = 18000) {
+  const start = performance.now();
+  while (!predicate()) {
+    if (performance.now() - start > milliseconds) throw Error(label);
+    await wait(50);
+  }
+}
+function pointerArc(turns) {
+  const canvas = doc().querySelector('#magic');
+  const {width, height} = canvas.getBoundingClientRect();
+  const x = width * .42, y = height * .48, r = Math.min(120, width * .20);
+  // Synthetic input has no browser-owned pointer to capture.
+  canvas.setPointerCapture = () => {};
+  function send(type, angle, buttons) {
+    canvas.dispatchEvent(new frame.contentWindow.PointerEvent(type, {
+      bubbles: true, pointerType: 'mouse', pointerId: 7, isPrimary: true, button: 0, buttons,
+      clientX: x + r * Math.cos(angle), clientY: y + r * Math.sin(angle),
+    }));
+  }
+  send('pointerdown', 0, 1);
+  for (let i = 1; i < 72; i++) send('pointermove', turns * Math.PI * 2 * i / 72, 1);
+  send('pointerup', turns * Math.PI * 2, 0);
+  return { canvas, x, y, r, ratio: canvas.width / width };
+}
+document.querySelector('#run').onclick = async () => {
+  document.querySelector('#run').disabled = true;
+  try {
+    await until(() => ready, '작품 로드');
+    await image.decode();
+    result.textContent = '';
+    pointerArc(.65);
+    check(!active(), '열린 곡선을 원으로 인식하지 않음');
+    const { canvas, x, y, r, ratio } = pointerArc(1);
+    check(active(), '마우스로 닫힌 원을 완성하면 선택');
+    const layer = canvas.getContext('2d');
+    const alpha = (px, py) => layer.getImageData(Math.round(px * ratio), Math.round(py * ratio), 1, 1).data[3];
+    const contrastVisible = () => alpha(x + r + 40, y) > 205 && alpha(x - r * .7, y) < 100;
+    await until(contrastVisible, '원 안팎의 밝기 차이가 나타남');
+    check(contrastVisible(), '원 안에는 빛이 남고 원 바깥은 어두워짐');
+    doc().querySelector('#clear-circle').click();
+    await until(() => alpha(x + r + 40, y) < 100, '원 바깥의 어두운 영역 제거');
+    check(!active() && alpha(x + r + 40, y) < 100, '원을 지우면 어두운 영역이 사라짐');
+    check(requests === 0, '마우스 원 그리기는 카메라 권한을 요청하지 않음');
+    const camera = doc().querySelector('#camera');
+    camera.click();
+    await until(() => gesture().includes('시작점 가까이'), '샘플 검지 인식 · ' + gesture());
+    check(requests === 1 && !active(), '한 번 연결한 영상에서 검지 포즈를 인식');
+    let cursor = null;
+    const arc = layer.arc.bind(layer);
+    layer.arc = (x, y, r, ...rest) => {
+      if (r === 4) cursor = {x, y};
+      arc(x, y, r, ...rest);
+    };
+    await until(() => cursor !== null, '화면에 검지 위치 표시');
+    for (let i = 1; i <= 32 && !active(); i++) {
+      const previous = cursor;
+      pathAngle = Math.PI * 2 * i / 32;
+      await until(() => active() || Math.hypot(cursor.x - previous.x, cursor.y - previous.y) > 7, `샘플 검지 이동 ${i}`, 6500);
+    }
+    check(active() && gesture().includes('원이 완성'), '공중에서 닫힌 원으로 인식');
+    check(doc().querySelector('#tracking').textContent.includes('실시간 적용'), '검지로 원을 그리는 동안 얼굴 합성 유지');
+    check(active(), '검지 궤적으로 원을 완성하고 요정이 이동');
+    camera.click();
+    check(stream.getTracks().every(track => track.readyState === 'ended'), '스위치를 끄면 카메라 트랙 종료');
+    result.textContent += '완료 · 샘플 영상과 마우스 원 그리기 통과';
+  } catch (error) { result.textContent += '\nFAIL · ' + error.message + '\n' + gesture(); }
+};
+</script>
+</html>

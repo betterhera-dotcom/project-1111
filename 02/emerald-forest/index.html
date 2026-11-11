@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#03100d">
+  <title>빛이 머무는 숲 · Emerald Reverie</title>
+  <meta name="description" content="당신의 움직임으로 깨어나는 에메랄드 숲. 빛과 요정, 그리고 당신의 얼굴이 만나는 인터랙티브 아트.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="experience" aria-label="마우스에 반응하는 요정의 숲">
+    <div id="forest" aria-hidden="true"></div>
+    <div class="wash" aria-hidden="true"></div>
+    <canvas id="magic" aria-hidden="true"></canvas>
+    <div class="grain" aria-hidden="true"></div>
+    <header>
+      <a class="wordmark" href="./" aria-label="빛이 머무는 숲 처음으로"><span class="mark">✧</span><span>EMERALD REVERIE<small>AN INTERACTIVE FOREST</small></span></a>
+      <div class="edition"><span class="live-dot"></span> 빛으로 깨어나는 작은 세계 <span class="number">N° 01</span></div>
+    </header>
+
+    <section class="story" aria-labelledby="title">
+      <p class="eyebrow"><span></span> A LITTLE MOVEMENT, A LITTLE MAGIC</p>
+      <h1 id="title">빛이 머무는 <em>숲</em></h1>
+      <p class="description">마우스를 움직이면, 숲의 작은 요정이 당신을 찾아와요.<br>마우스를 누른 채 원을 그리거나 웹캠 앞에서 검지로 원을 그려 보세요.</p>
+      <div class="invitation"><span class="pointer-icon">↗</span><span>움직여 보세요. 당신의 숲이 깨어납니다.</span><i></i></div>
+    </section>
+
+    <aside class="studio" aria-label="숲 이미지와 후광 조절">
+      <div class="studio-content">
+      <button id="upload" type="button"><span class="button-icon">▧</span><span><strong>나만의 숲 불러오기</strong><small>JPG, PNG, WEBP · 최대 20 MB</small></span><span class="arrow">＋</span></button>
+      <input id="forest-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <div class="upload-footer"><span id="image-status" role="status">꿈꾸는 숲 · 기본 배경</span><button id="reset" type="button" hidden>기본 숲으로</button></div>
+      <div class="divider"></div>
+      <div class="color-heading"><span>요정의 후광과 불빛</span><span id="color-name" role="status">에메랄드</span></div>
+      <div class="color-options" role="group" aria-label="요정 빛 색상">
+        <button class="color-swatch" type="button" data-glow="#7bf6b3" style="--swatch:#7bf6b3" aria-label="에메랄드" aria-pressed="true"></button>
+        <button class="color-swatch" type="button" data-glow="#ffd480" style="--swatch:#ffd480" aria-label="금빛" aria-pressed="false"></button>
+        <button class="color-swatch" type="button" data-glow="#c3a0ff" style="--swatch:#c3a0ff" aria-label="라벤더" aria-pressed="false"></button>
+        <button class="color-swatch" type="button" data-glow="#88d8ff" style="--swatch:#88d8ff" aria-label="하늘빛" aria-pressed="false"></button>
+        <label class="custom-color">직접 선택 <input id="glow-color" type="color" value="#7bf6b3" aria-label="후광 색상 직접 선택"></label>
+      </div>
+      <label class="range-heading" for="glow-strength">후광 세기 <output id="glow-strength-value" for="glow-strength">100%</output></label>
+      <input id="glow-strength" class="control-range" type="range" min="0" max="200" value="100" step="5" aria-valuetext="100%">
+      <p class="privacy">얼굴 영상과 이미지는 이 브라우저 안에서만 사용돼요.</p>
+      </div>
+    </aside>
+
+    <aside class="camera-dock" aria-label="웹캠 얼굴 합성">
+      <label class="camera-switch" for="camera">
+        <span><strong>나의 얼굴로 요정 깨우기</strong><small id="camera-label">웹캠 꺼짐</small></span>
+        <input id="camera" type="checkbox" role="switch" aria-label="웹캠 켜기" aria-checked="false">
+        <span class="switch-track" aria-hidden="true"></span>
+      </label>
+      <div id="camera-monitor" hidden><video id="webcam" autoplay muted playsinline></video><span id="tracking" role="status" aria-live="polite">얼굴을 찾고 있어요</span><span id="gesture-status" role="status" aria-live="polite"></span></div>
+      <p id="camera-status" class="status" role="status" aria-live="polite">스위치를 켜면 카메라 권한을 요청해요.</p>
+      <div class="face-controls">
+        <div>
+          <label class="range-heading" for="face-size">얼굴 크기 <output id="face-size-value" for="face-size">100%</output></label>
+          <input id="face-size" class="control-range" type="range" min="75" max="150" value="100" step="1" aria-valuetext="100%">
+        </div>
+        <div>
+          <label class="range-heading" for="face-angle">얼굴 각도 <output id="face-angle-value" for="face-angle">기본 0°</output></label>
+          <input id="face-angle" class="control-range" type="range" min="-30" max="30" value="0" step="1" aria-valuetext="기본 0°">
+        </div>
+      </div>
+    </aside>
+
+    <footer><span class="scene-status"><span id="state-dot"></span><span id="scene-state">고요한 숲 · 마우스를 움직여 보세요</span></span><span class="footer-center">MOVE TO AWAKEN · LEAVE TO REST</span><div class="scene-actions"><button id="clear-circle" type="button" hidden>원 지우기</button><button id="fullscreen" type="button" aria-label="전체 화면">전체 화면 <span>⛶</span></button></div></footer>
+    <span class="corner-note" aria-hidden="true">WHERE YOUR PRESENCE BECOMES MAGIC</span>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

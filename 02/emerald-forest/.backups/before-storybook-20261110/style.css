@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+:root { color-scheme: dark; font-family: 'Noto Sans KR', sans-serif; --presence: .65; --emerald: #b6f1cd; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #020907; color: #e5ebe3; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible { outline: 1px solid #bdffd7; outline-offset: 7px; }
+#experience { position: relative; min-height: 800px; height: 100svh; overflow: hidden; isolation: isolate; }
+#forest { position: absolute; inset: -2%; background: url('assets/forest.png') center 46% / cover no-repeat; filter: saturate(.7) hue-rotate(-18deg); opacity: calc(var(--presence) * .86); will-change: opacity; }
+.wash { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,12,8,.65), transparent 70%), linear-gradient(0deg, #020b08 0%, transparent 70%, #010906aa); }
+#magic { position: absolute; inset: 0; width: 100%; height: 100%; }
+.grain { pointer-events: none; position: absolute; inset: 0; z-index: 2; opacity: .045; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' d='M0 0h180v180H0z'/%3E%3C/svg%3E"); }
+header { position: absolute; z-index: 3; top: 42px; left: 4.4%; right: 4.4%; display: flex; align-items: center; justify-content: space-between; }
+.wordmark { display: flex; align-items: center; gap: 14px; color: #e7efdc; text-decoration: none; font-family: Georgia, serif; font-size: 14px; letter-spacing: 2.4px; }
+.mark { color: #c8edb0; font-size: 42px; font-weight: 300; line-height: 1; }
+.wordmark small { display: block; margin-top: 7px; font: 8px 'Noto Sans KR', sans-serif; letter-spacing: 2.7px; color: #99ab9b; }
+.edition { display: flex; align-items: center; gap: 10px; font-size: 10px; letter-spacing: 1px; color: #aec0ae; }
+.live-dot, #state-dot { width: 5px; height: 5px; border-radius: 50%; background: #b7deb9; display: inline-block; }
+.number { margin-left: 24px; font-family: Georgia, serif; color: #7c9582; }
+.story { position: absolute; left: 7%; bottom: 27%; z-index: 3; pointer-events: none; }
+.eyebrow { display: flex; align-items: center; gap: 14px; color: #b4cba9; font-size: 9px; letter-spacing: 3px; margin-bottom: 28px; }
+.eyebrow span { width: 26px; height: 1px; background: #adcba2; }
+h1 { font-family: 'Noto Serif KR', serif; font-size: clamp(40px, 4.4vw, 72px); letter-spacing: -3px; font-weight: 300; margin: 0 0 28px; line-height: 1.4; text-shadow: 0 2px 28px #001008; }
+h1 em { font-style: normal; color: #cae7b8; }
+.description { color: #c1cec1; font-size: 12px; font-weight: 300; line-height: 2.1; letter-spacing: .4px; }
+.invitation { margin-top: 34px; display: flex; align-items: center; gap: 12px; font-size: 10px; color: #a9c3ab; letter-spacing: .5px; }
+.pointer-icon { font-size: 21px; color: #ccebc5; }
+.invitation i { display: block; width: 34px; height: 1px; background: #617966; margin-left: 8px; }
+.studio { position: absolute; z-index: 4; right: 4.4%; bottom: 17%; width: 310px; padding: 25px; border: 1px solid #a2c7a026; background: linear-gradient(130deg, #12231bce, #04120ed9); backdrop-filter: blur(18px); border-radius: 3px; }
+.studio-heading { display: flex; justify-content: space-between; color: #a6be9c; font-size: 9px; letter-spacing: 2px; margin-bottom: 25px; }
+.studio-heading span:last-child { font-size: 16px; line-height: 1; color: #c9deb5; }
+.studio > button { width: 100%; border: 0; padding: 0; background: none; display: flex; gap: 14px; align-items: center; text-align: left; }
+.studio > button:hover strong { color: #c9ffd8; }
+.button-icon { width: 35px; height: 38px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid #8fb69133; color: #b4d6ac; font-size: 23px; }
+.studio strong { display: block; font-size: 11px; font-weight: 400; transition: color .2s; }
+.studio small { display: block; color: #94a795; font-size: 9px; margin-top: 7px; }
+.arrow { margin-left: auto; color: #a2bc9c; font-size: 19px; }
+.status { font-size: 9px; color: #97af9b; line-height: 1.8; margin: 12px 0 0; }
+.divider { height: 1px; background: #a3bca322; margin: 20px 0; }
+.upload-footer { display: flex; align-items: center; gap: 8px; margin-top: 13px; min-width: 0; font-size: 9px; color: #91a694; }
+#image-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#reset { flex-shrink: 0; font-size: 9px; border: 0; background: none; padding: 0; text-decoration: underline; color: #b1c9a4; }
+.privacy { margin: 22px 0 0; color: #7e9685; font-size: 8px; line-height: 1.8; }
+#camera-monitor { margin-top: 15px; display: flex; align-items: center; gap: 12px; color: #bdd6b4; font-size: 9px; }
+#camera-monitor[hidden], [hidden] { display: none !important; }
+#webcam { width: 66px; height: 52px; object-fit: cover; border: 1px solid #8ba17d66; border-radius: 3px; transform: scaleX(-1); }
+footer { position: absolute; z-index: 3; left: 4.4%; right: 4.4%; bottom: 31px; border-top: 1px solid #acc2a928; padding-top: 21px; display: flex; justify-content: space-between; align-items: center; color: #94ad98; font-size: 9px; letter-spacing: .6px; }
+.scene-status { display: flex; align-items: center; gap: 10px; }
+#state-dot { opacity: calc(.3 + var(--presence) * .7); }
+.footer-center { font-size: 8px; letter-spacing: 2px; color: #778f7e; }
+#fullscreen { background: none; padding: 0; border: 0; color: #b0c3aa; font-size: 9px; display: flex; gap: 13px; align-items: center; }
+#fullscreen span { font-size: 19px; }
+.corner-note { position: absolute; bottom: 16.5%; left: 7%; font: italic 11px Georgia, serif; letter-spacing: 2px; color: #748c78; }
+@media (max-width: 1000px) { .story { left: 5%; bottom: 38%; } h1 { font-size: 48px; } .studio { bottom: 14%; width: 285px; padding: 22px; } .description { font-size: 11px; } .footer-center { display: none; } .corner-note { bottom: 20%; left: 5%; max-width: 180px; line-height: 1.9; } }
+@media (max-width: 640px) { #experience { min-height: 850px; } header { top: 25px; left: 6%; right: 6%; } .edition { display: none; } .wordmark { font-size: 12px; } .story { left: 7%; right: 6%; top: 24%; bottom: auto; } h1 { font-size: 41px; letter-spacing: -2px; margin-bottom: 20px; } .eyebrow { font-size: 7px; letter-spacing: 1.7px; margin-bottom: 22px; } .description { font-size: 10px; } .invitation { font-size: 9px; margin-top: 20px; } .studio { left: 7%; right: 7%; width: auto; bottom: 13%; padding: 20px 23px; } .studio-heading { margin-bottom: 18px; } .divider { margin: 16px 0; } .privacy { margin-top: 15px; } .corner-note { display: none; } footer { left: 7%; right: 7%; font-size: 8px; bottom: 23px; } }
+@media (prefers-reduced-motion: reduce) { #forest { will-change: auto; } }
