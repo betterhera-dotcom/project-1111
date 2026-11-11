@@ -1,0 +1,36 @@
+{
+  "publisher": "Marvel / Disney Japan",
+  "credit": "© MARVEL",
+  "sourceIndex": "https://marvel.disney.co.jp/character",
+  "usage": "Unmodified official comic character thumbnails for the local interaction prototype. Artwork remains owned by its rights holders.",
+  "images": [
+    {
+      "character": "iron-man",
+      "file": "1110/assets/avenger-iron-man-v1.jpg",
+      "sourcePage": "https://marvel.disney.co.jp/character/ironman",
+      "imageURL": "https://lumiere-a.akamaihd.net/v1/images/th_character_12450_12452_12450_12531_12510_12531_7cddd56b.jpeg?region=0,0,800,800",
+      "bytes": 164021
+    },
+    {
+      "character": "captain-america",
+      "file": "1110/assets/avenger-captain-america-v1.jpg",
+      "sourcePage": "https://marvel.disney.co.jp/character/captainamerica",
+      "imageURL": "https://lumiere-a.akamaihd.net/v1/images/th_character_12461_12515_12503_12486_12531_12539_12450_5c981efa.jpeg?region=0,0,800,800",
+      "bytes": 151544
+    },
+    {
+      "character": "thor",
+      "file": "1110/assets/avenger-thor-v1.jpg",
+      "sourcePage": "https://marvel.disney.co.jp/character/thor",
+      "imageURL": "https://lumiere-a.akamaihd.net/v1/images/th_character_12477_12540_df9e274c.jpeg?region=0,0,800,800",
+      "bytes": 148564
+    },
+    {
+      "character": "hulk",
+      "file": "1110/assets/avenger-hulk-v1.jpg",
+      "sourcePage": "https://marvel.disney.co.jp/character/hulk",
+      "imageURL": "https://lumiere-a.akamaihd.net/v1/images/th_character_12495_12523_12463_6d710604.jpeg?region=0,0,800,800",
+      "bytes": 105019
+    }
+  ]
+}

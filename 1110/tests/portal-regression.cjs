@@ -58,9 +58,9 @@ function setup({modelAvailable=true,deferred=false,handAvailable=true,cameraErro
   if(modelAvailable)sandbox.SelfieSegmentation=Model;
   if(handAvailable)sandbox.Hands=HandModel;
   vm.createContext(sandbox);
-  vm.runInContext(source+`\nthis.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,
-    state:()=>({personReady,toonReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt}),
-    personContext:pc,probeContext:personProbeCtx,paintContext:paintCtx,paintedPerson,person,subjectContext:subjectCtx,sceneContext:ctx,landscapeContext:landscapeCtx,worldContext:worldCtx,cosmosImage,snowImage,portalRealms};`,sandbox);
+  vm.runInContext(source+`\nthis.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,palmStagePoint,updatePalmDrawing,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,
+    state:()=>({personReady,toonReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt,heroIndex:summonedHero?.heroIndex,heroX:summonedHero?.x,heroY:summonedHero?.y,handTrailLength:handTrail.length,drawingHand,handCooldownUntil}),
+    personContext:pc,probeContext:personProbeCtx,paintContext:paintCtx,paintedPerson,person,subjectContext:subjectCtx,sceneContext:ctx,landscapeContext:landscapeCtx,worldContext:worldCtx,cosmosImage,snowImage,portalRealms,avengers};`,sandbox);
   function drawCircle(x=900,y=250,r=90){
     const events=elements.get('#scene').listeners;
     const point=a=>({pointerId:1,button:0,clientX:x+Math.cos(a)*r,clientY:y+Math.sin(a)*r+82});
@@ -192,6 +192,56 @@ test('a click, straight stroke, or half circle cannot open a portal',()=>{
     assert.equal(env.api.state().realmIndex,undefined);
   }
 });
+function triangleStroke({angle=0,start=0,wobble=0,steps=14}={}){
+  const vertices=[{x:0,y:-100},{x:100,y:80},{x:-100,y:80}];
+  const points=[];
+  for(let side=0;side<3;side++)for(let i=0;i<steps;i++){
+    const a=vertices[side],b=vertices[(side+1)%3],t=i/steps;
+    const x=a.x+(b.x-a.x)*t+Math.sin(i*1.7)*wobble,y=a.y+(b.y-a.y)*t+Math.cos(i*1.3)*wobble;
+    points.push({x:900+x*Math.cos(angle)-y*Math.sin(angle),y:250+x*Math.sin(angle)+y*Math.cos(angle)});
+  }
+  const ordered=points.slice(start).concat(points.slice(0,start));return [...ordered,ordered[0]];
+}
+test('triangles summon four distinct Avengers without a circle portal',()=>{
+  const env=setup(),seen=new Set();
+  for(const options of [{},{angle:1.1},{start:7},{wobble:4}]){
+    traceStroke(env,triangleStroke(options));
+    assert.equal(env.elements.get('#stage-state').textContent,'AVENGER SUMMONED');
+    assert.equal(env.api.state().realmIndex,undefined);
+    seen.add(env.api.state().heroIndex);
+  }
+  assert.equal(seen.size,4);
+  traceStroke(env,circleStroke());
+  assert.equal(env.api.state().heroIndex,undefined);
+  assert.equal(env.elements.get('#stage-state').textContent,'GATEWAY ESTABLISHED');
+});
+test('a hero renders without webcam access and reset clears the summon',()=>{
+  const env=setup();traceStroke(env,triangleStroke());
+  const hero=env.api.avengers[env.api.state().heroIndex];
+  Object.assign(hero.image,{complete:true,naturalWidth:1024,naturalHeight:1536});
+  env.api.subjectContext.operations.length=0;env.api.frame(2000);
+  assert.ok(env.api.subjectContext.operations.some(op=>op.type==='draw'&&op.image===hero.image));
+  assert.equal(env.tracks.length,0);
+  env.elements.get('#reset').click();assert.equal(env.api.state().heroIndex,undefined);
+  env.api.subjectContext.operations.length=0;env.api.frame(3000);
+  assert.ok(!env.api.subjectContext.operations.some(op=>op.type==='draw'));
+});
+test('the four Avengers use distinct local official character images',()=>{
+  const {avengers}=setup().api;
+  assert.equal(avengers.length,4);assert.equal(new Set(avengers.map(hero=>hero.image.src)).size,4);
+  for(const hero of avengers){
+    const bytes=fs.readFileSync(path.join(__dirname,'..',hero.image.src));
+    assert.ok(bytes.length>1000);assert.equal(bytes[0],255);assert.equal(bytes[1],216);
+  }
+});
+test('camera readiness and resizing preserve a summoned hero',async()=>{
+  const env=setup();traceStroke(env,triangleStroke());const index=env.api.state().heroIndex;
+  await env.api.start();await flush();assert.equal(env.api.state().heroIndex,index);
+  assert.equal(env.api.state().realmIndex,undefined);
+  const workspace=env.elements.get('#workspace');workspace.clientWidth=640;workspace.clientHeight=400;
+  env.api.resize();assert.equal(env.api.state().heroIndex,index);
+  assert.ok(env.api.state().heroX<=640&&env.api.state().heroY<=400);
+});
 test('disconnect clears the subject and rejects late callbacks',async()=>{
   const env=setup();await env.api.start();await flush();env.api.stop();
   env.api.updatePerson({image:{},segmentationMask:{}});
@@ -219,6 +269,53 @@ function openHand(){
  for(const [mcp,pip,tip,x,y] of [[5,6,8,.4,.65],[9,10,12,.48,.62],[13,14,16,.56,.65],[17,18,20,.64,.7]]){points[mcp]={x,y};points[pip]={x,y:y-.15};points[tip]={x,y:y-.33};}
  return points;
 }
+function feedPalmAt(env,x,y,time,label='Right'){
+ const hand=openHand(),center=[0,5,9,13,17].reduce((sum,i)=>({x:sum.x+hand[i].x/5,y:sum.y+hand[i].y/5}),{x:0,y:0});
+ const workspace=env.elements.get('#workspace'),camera=env.elements.get('#camera'),scale=Math.min(workspace.clientWidth/camera.videoWidth,workspace.clientHeight/camera.videoHeight);
+ const px=1-(x-(workspace.clientWidth-camera.videoWidth*scale)/2)/(camera.videoWidth*scale),py=(y-(workspace.clientHeight-camera.videoHeight*scale)/2)/(camera.videoHeight*scale);
+ env.setClock(time);env.api.updatePalms({multiHandLandmarks:[hand.map(point=>({x:point.x+px-center.x,y:point.y+py-center.y}))],multiHandedness:[{label}]});
+}
+test('an open palm draws a full circle and opens a portal automatically',async()=>{
+ const env=setup();await env.api.start();await flush();const before=env.api.state().realmIndex;
+ for(let i=0;i<=48;i++){
+  const angle=i*Math.PI*2/48;feedPalmAt(env,830+Math.cos(angle)*60,300+Math.sin(angle)*60,2000+i*100);
+  if(i===24)assert.equal(env.api.state().realmIndex,before,'a half circle must not trigger');
+ }
+ assert.notEqual(env.api.state().realmIndex,before);
+ assert.equal(env.api.state().heroIndex,undefined);
+ assert.equal(env.elements.get('#stage-state').textContent,'GATEWAY ESTABLISHED');
+ const opened=env.api.state().realmIndex;
+ for(let i=0;i<8;i++)feedPalmAt(env,890,300,7000+i*100);
+ assert.equal(env.api.state().realmIndex,opened,'holding the hand still must not reopen the portal');
+});
+test('a short approach before the hand circle does not prevent recognition',async()=>{
+ const env=setup();await env.api.start();await flush();const before=env.api.state().realmIndex;
+ for(let i=0;i<10;i++)feedPalmAt(env,680+i*21,200+i*10,2000+i*100);
+ for(let i=0;i<=48;i++){const angle=i*Math.PI*2/48;feedPalmAt(env,890+Math.cos(angle)*60,300+Math.sin(angle)*60,3000+i*100);}
+ assert.notEqual(env.api.state().realmIndex,before);
+});
+test('hand loss, switching hands, and stopping the camera cannot join unrelated strokes',async()=>{
+ const env=setup();await env.api.start();await flush();
+ for(let i=0;i<10;i++)feedPalmAt(env,700+i*8,270,2000+i*100);
+ assert.ok(env.api.state().handTrailLength>1);
+ env.setClock(3500);env.api.updatePalms({multiHandLandmarks:[]});assert.equal(env.api.state().handTrailLength,0);
+ feedPalmAt(env,900,300,4000,'Left');assert.equal(env.api.state().drawingHand,'Left');
+ feedPalmAt(env,920,300,4100,'Right');assert.equal(env.api.state().drawingHand,'Left','a new hand must not take over the old stroke immediately');
+ feedPalmAt(env,920,300,4700,'Right');assert.equal(env.api.state().drawingHand,'Right');assert.equal(env.api.state().handTrailLength,1);
+ env.api.stop();assert.equal(env.api.state().handTrailLength,0);assert.equal(env.api.state().drawingHand,null);
+ assert.ok(env.tracks.every(track=>track.stopped));
+});
+test('mouse drawing takes priority and hand mapping preserves portrait proportions',async()=>{
+ const env=setup();await env.api.start();await flush();feedPalmAt(env,800,300,2000);
+ const events=env.elements.get('#scene').listeners;
+ events.pointerdown({pointerId:1,button:0,clientX:900,clientY:332});
+ feedPalmAt(env,850,300,2100);assert.equal(env.api.state().handTrailLength,0);
+ events.pointercancel();
+ const workspace=env.elements.get('#workspace');workspace.clientWidth=390;workspace.clientHeight=760;env.api.resize();
+ const center=env.api.palmStagePoint({x:.5,y:.5,span:.1}),horizontal=env.api.palmStagePoint({x:.6,y:.5,span:.1}),vertical=env.api.palmStagePoint({x:.5,y:.5+.1*1280/720,span:.1});
+ assert.ok(Math.abs(Math.hypot(horizontal.x-center.x,horizontal.y-center.y)-Math.hypot(vertical.x-center.x,vertical.y-center.y))<.001);
+ assert.ok(horizontal.x<center.x,'the hand cursor must mirror the camera');
+});
 test('an open palm summons a mirrored spell before entry, and a fist removes it',async()=>{
  const env=setup();await env.api.start();await flush();assert.equal(env.api.state().handsReady,true);
  const landmarks=openHand();assert.ok(env.api.describePalm(landmarks));
