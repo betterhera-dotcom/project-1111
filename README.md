@@ -26,6 +26,8 @@ node server.cjs
 
 ## 포털 작품 공개 링크
 
-[포털 인터랙션 열기](https://betterhera-dotcom.github.io/project-1111/1110/%ED%8F%AC%ED%84%B8_%EC%9D%B8%ED%84%B0%EB%9E%99%EC%85%98.html)
+[포털 인터랙션 열기](https://betterhera-dotcom.github.io/project-1111/)
+
+기본 주소의 `index.html`이 `1110/포털_인터랙션.html`로 바로 연결합니다. GitHub Pages 설정의 **Visit site**에서도 작품을 열 수 있습니다.
 
 GitHub Pages는 `main` 브랜치의 루트 폴더에서 배포합니다. `.nojekyll` 파일로 HTML과 이미지 파일을 별도 변환 없이 제공합니다.
