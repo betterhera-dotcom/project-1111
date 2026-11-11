@@ -48,7 +48,7 @@
     <div class="eyebrow">BEYOND THE POSSIBLE</div>
     <h1 id="main-title"><span class="movie-prelude">OPEN THE</span><span class="movie-main">MULTIVERSE</span></h1>
     <h2>당신의 손끝에서, 새로운 차원이 열린다.</h2>
-    <p class="description">원을 그려 10개의 세계를 여행해 보세요.<br>세모를 그리면 어벤저스 캐릭터가 나타나요.<br>웹캠을 연결하면 그림체로 변환된 내가 나타나요.</p>
+    <p class="description">원을 그려 10개의 세계를 여행해 보세요.<br>세모를 그리면 어벤저스 캐릭터가 나타나요.<br>웹캠을 연결하면 포털 속에 내가 나타나요.</p>
     <p class="hand-invitation"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 12V5a1.5 1.5 0 0 1 3 0v6-8a1.5 1.5 0 0 1 3 0v8-7a1.5 1.5 0 0 1 3 0v7-5a1.5 1.5 0 0 1 3 0v10c0 4-3 6-6 6-2 0-4-1-5-3l-5-6a1.5 1.5 0 0 1 2-2l2 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>손바닥으로 원을 그려보세요</p>
     <button class="launch" id="demo">포털 열기<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5"/></svg></button>
     <div class="intro-note">CIRCLE TO TRAVEL. TRIANGLE TO SUMMON.</div>
@@ -120,7 +120,7 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 let w,h,points=[],drawing=false,portal=null,activePointer=null,stream,captureTimer=null,cameraSession=0,cameraWanted=false;
 let preview=true;
 let summonedHero=null,lastHero=-1;
-let handTrail=[],handCircleGuide=null,drawingHand=null,handLastSeen=0,handCooldownUntil=0;
+let handTrail=[],handCircleGuide=null,drawingHand=null,handLastSeen=0,handCooldownUntil=0,handShapeCheckAt=0,handShapePointAt=-1;
 let realmDeck=[],lastRealm=0;
 function nextRealm(){
  if(!realmDeck.length){
@@ -141,7 +141,7 @@ function updateReadout(mode){
  energy.textContent=mode==='active'||mode==='hero'?'100 %':mode==='drawing'?'CHARGING':'STANDBY';
  caption.textContent=mode==='hero'?'AVENGER / '+avengers[summonedHero.heroIndex].label:mode==='active'?'GATEWAY / '+portalRealms[portal.realmIndex].label:'THE NEXT DIMENSION IS IN YOUR HANDS';
 }
-function openGateway(shape){const now=performance.now();summonedHero=null;portal={...shape,born:now,enteredAt:stream&&toonReady?now:null,realmIndex:nextRealm()};preview=false;updateReadout('active');status.textContent=portalRealms[portal.realmIndex].name+'에 포털이 열렸어요. '+(stream?'손바닥으로 원을 그리면 다음 세계로 이동해요.':'웹캠을 연결하면 당신의 모습이 나타나요.');}
+function openGateway(shape){const now=performance.now();summonedHero=null;portal={...shape,born:now,enteredAt:stream&&personReady?now:null,realmIndex:nextRealm()};preview=false;updateReadout('active');status.textContent=portalRealms[portal.realmIndex].name+'에 포털이 열렸어요. '+(stream?'손바닥으로 원을 그리면 다음 세계로 이동해요.':'웹캠을 연결하면 당신의 모습이 나타나요.');}
 function summonAvenger(shape){
  lastHero=(lastHero+1)%avengers.length;
  const r=Math.min(Math.max(100,shape.r*1.3),w*.42,h*.42);
@@ -153,7 +153,27 @@ addEventListener('resize',resize);resize();
 // Input adapter: future hand landmarks can call beginStroke / moveStroke / endStroke.
 function beginStroke(x,y){if(preview){portal=null;preview=false;}points=[{x,y}];drawing=true;updateReadout('drawing');}
 function moveStroke(x,y){if(drawing&&Math.hypot(x-points.at(-1).x,y-points.at(-1).y)>3)points.push({x,y});}
-function endStroke(){if(!drawing)return;drawing=false;const triangle=recognizeTriangle(points),circle=triangle?null:recognizeCircle(points);if(triangle){summonAvenger(triangle);}else if(circle){openGateway(circle);}else{updateReadout(portal?'active':'idle');status.textContent='누른 채 원이나 세모를 그린 다음 손을 떼어 주세요. 시작점 가까이 돌아오면 마법이 완성돼요.';}points=[];}
+function endStroke(){if(!drawing)return;drawing=false;const result=classifyStroke(points);if(result?.type==='triangle'){summonAvenger(result.shape);}else if(result){openGateway(result.shape);}else{updateReadout(portal?'active':'idle');status.textContent='누른 채 원이나 세모를 그린 다음 손을 떼어 주세요. 시작점 가까이 돌아오면 마법이 완성돼요.';}points=[];}
+function sampleStroke(stroke,count=32){
+ if(stroke.length<2)return stroke;
+ const lengths=[0];for(let i=1;i<stroke.length;i++)lengths.push(lengths.at(-1)+Math.hypot(stroke[i].x-stroke[i-1].x,stroke[i].y-stroke[i-1].y));
+ const total=lengths.at(-1);if(total<1)return stroke;
+ const samples=[];let segment=1;
+ for(let i=0;i<count;i++){
+  const distance=total*i/(count-1);while(segment<stroke.length-1&&lengths[segment]<distance)segment++;
+  const a=stroke[segment-1],b=stroke[segment],span=lengths[segment]-lengths[segment-1],t=span?(distance-lengths[segment-1])/span:0;
+  samples.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,t:a.t});
+ }
+ return samples;
+}
+function classifyStroke(stroke){
+ if(stroke.length<6)return null;
+ const p=sampleStroke(stroke),triangle=recognizeTriangle(p),circle=recognizeCircle(p),fitted=fitHandCircle(p);
+ const round=circle||(fitted&&Math.abs(fitted.turn)>5.2&&Math.hypot(p[0].x-p.at(-1).x,p[0].y-p.at(-1).y)<fitted.r*.65?fitted:null);
+ // Compare both models on the same evenly sampled loop; do not give triangles priority.
+ if(triangle&&(!round||triangle.error<(fitted?.error??circle.error)*.6))return {type:'triangle',shape:triangle};
+ return round?{type:'circle',shape:recognizeCircle(stroke)||round}:null;
+}
 function segmentDistance(p,a,b){
  const dx=b.x-a.x,dy=b.y-a.y,length=dx*dx+dy*dy;
  const t=length?Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/length)):0;
@@ -174,7 +194,7 @@ function recognizeTriangle(p){
   const distance=Math.min(segmentDistance(p[i],a,b),segmentDistance(p[i],b,c),segmentDistance(p[i],c,a));
   error+=distance;worst=Math.max(worst,distance);if(i)length+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);
  }
- return error/p.length<size*.045&&worst<size*.14&&length>perimeter*.75&&length<perimeter*1.35?{x,y,r:(bw+bh)/4}:null;
+ return error/p.length<size*.035&&worst<size*.1&&length>perimeter*.75&&length<perimeter*1.35?{x,y,r:(bw+bh)/4,error:error/p.length/(size*.5)}:null;
 }
 function recognizeCircle(p){
  if(p.length<8)return null;
@@ -186,7 +206,7 @@ function recognizeCircle(p){
   error+=Math.abs(Math.hypot(p[i].x-x,p[i].y-y)-r);
   if(i){length+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);const a=Math.atan2(p[i].y-y,p[i].x-x)-Math.atan2(p[i-1].y-y,p[i-1].x-x);turn+=Math.atan2(Math.sin(a),Math.cos(a));}
  }
- return error/p.length/r<.27&&length/r>4.6&&length/r<9&&Math.abs(turn)>4.8?{x,y,r}:null;
+ return error/p.length/r<.27&&length/r>4.6&&length/r<9&&Math.abs(turn)>4.8?{x,y,r,error:error/p.length/r}:null;
 }
 function pointerPosition(e){const box=canvas.getBoundingClientRect();return {x:e.clientX-box.left,y:e.clientY-box.top};}
 canvas.addEventListener('pointerdown',e=>{if(activePointer!==null||e.button!==0)return;resetHandDrawing(700);activePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);const p=pointerPosition(e);beginStroke(p.x,p.y);});
@@ -203,7 +223,7 @@ function stopCamera(preserveIntent=false){
  palms=[];handsReady=false;lastHandFrame=-Infinity;resetHandDrawing(400);
  const previous=stream;stream=null;previous?.getTracks().forEach(track=>track.stop());
  setHandHint('웹캠을 연결하면 손바닥으로 그릴 수 있어요. 마우스도 사용할 수 있어요.');
- personReady=false;toonReady=false;personUpdated=0;cameraPortalInitialized=false;pc.clearRect(0,0,person.width,person.height);subjectCtx.clearRect(0,0,w,h);
+ personReady=false;personUpdated=0;cameraPortalInitialized=false;pc.clearRect(0,0,person.width,person.height);subjectCtx.clearRect(0,0,w,h);
  video.srcObject=null;cameraButton.disabled=false;cameraLabel.textContent='웹캠 연결';cameraButton.setAttribute('aria-pressed','false');
  document.querySelector('#input-source').innerHTML='MOUSE<em>/ TOUCH</em>';
 }
@@ -219,7 +239,7 @@ cameraButton.onclick=async function(){
   stream=acquired;video.srcObject=stream;await video.play();if(session!==cameraSession)return;
   for(const track of stream.getVideoTracks())track.addEventListener('ended',()=>{if(session!==cameraSession)return;stopCamera();status.textContent='카메라 연결이 종료됐어요. 다시 연결할 수 있어요.';},{once:true});
   cameraLabel.textContent='웹캠 해제';this.setAttribute('aria-pressed','true');document.querySelector('#input-source').innerHTML='CAMERA<em>+ DRAW</em>';
-  status.textContent='카메라가 연결됐어요. 인물 인식과 그림체 변환을 준비하고 있어요…';
+  status.textContent='카메라가 연결됐어요. 인물과 손 인식을 준비하고 있어요…';
   // Model loading never blocks the disconnect control or exposes the original room.
   prepareSegmentation(session).catch(()=>{if(session!==cameraSession)return;stopCamera();cameraLabel.textContent='웹캠 다시 시도';status.textContent='인물 분리를 불러오지 못했어요. 인터넷 연결을 확인하고 웹캠을 다시 연결해 주세요.';});
   prepareHands(session).catch(()=>{if(session!==cameraSession)return;handsReady=false;palms=[];setHandHint('손 인식을 불러오지 못했어요. 인터넷 연결 후 웹캠을 다시 연결해 주세요.','error');});
@@ -237,9 +257,7 @@ addEventListener('pagehide',()=>{
 });
 // Independent layers: snow outside, cosmos inside, transparent person, portal effects.
 const person=document.createElement('canvas'),pc=person.getContext('2d');
-const paintedPerson=document.createElement('canvas'),paintCtx=paintedPerson.getContext('2d',{willReadFrequently:true});
 const personProbe=document.createElement('canvas'),personProbeCtx=personProbe.getContext('2d',{willReadFrequently:true});
-let toonReady=false,toonRenderer=null,toonRendererTried=false;
 let personReady=false,personUpdated=0,segmenter=null,modelPromise=null,inFlight=null,processingSession=0,cameraPortalInitialized=false;
 const HAND_MODEL_ROOT='https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/';
 let handTracker=null,handModelPromise=null,handInFlight=null,handProcessingSession=0,handsReady=false,lastHandFrame=-Infinity,palms=[];
@@ -282,9 +300,11 @@ function updatePalms(results){
  for(const [index,landmarks] of (results.multiHandLandmarks||[]).slice(0,2).entries()){
   const detected=describePalm(landmarks);if(!detected)continue;
   const key=results.multiHandedness?.[index]?.label||String(index),old=palms.find(palm=>palm.key===key&&now-palm.updated<500);
-  // The middle of three detections rejects one-frame spikes without a long trailing delay.
+  // Hold only an isolated jump after a still hand; normal movement has no median-frame delay.
   const samples=[...(old?.samples||[]),detected].slice(-3),middle=axis=>samples.map(p=>p[axis]).sort((a,b)=>a-b)[1];
-  const target=samples.length===3?{x:middle('x'),y:middle('y')}:detected,blend=old?1-Math.exp(-Math.max(16,now-old.updated)/55):1;
+  const vw=video.videoWidth||640,vh=video.videoHeight||480,distance=(a,b)=>Math.hypot((a.x-b.x)*vw,(a.y-b.y)*vh),jump=Math.min(vw,vh)*.09;
+  const spike=samples.length===3&&distance(samples[0],samples[1])<jump*.25&&distance(samples[1],samples[2])>jump;
+  const target=spike?{x:middle('x'),y:middle('y')}:detected,blend=old?1-Math.exp(-Math.max(16,now-old.updated)/25):1;
   next.push({...detected,key,samples,x:old?old.x+(target.x-old.x)*blend:target.x,y:old?old.y+(target.y-old.y)*blend:target.y,span:old?old.span+(detected.span-old.span)*.48:detected.span,born:old?.born??now,updated:now});
  }
  palms=next;
@@ -297,7 +317,7 @@ function palmStagePoint(palm){
  return {x:(w-vw*scale)/2+(1-palm.x)*vw*scale,y:(h-vh*scale)/2+palm.y*vh*scale,r:Math.min(62,Math.max(22,palm.span*vw*scale*.65))};
 }
 function resetHandDrawing(cooldown=0){
- const hadTrail=handTrail.length>1;handTrail=[];handCircleGuide=null;drawingHand=null;handLastSeen=0;
+ const hadTrail=handTrail.length>1;handTrail=[];handCircleGuide=null;drawingHand=null;handLastSeen=0;handShapeCheckAt=0;handShapePointAt=-1;
  handCooldownUntil=Math.max(handCooldownUntil,performance.now()+cooldown);
  if(hadTrail&&!drawing)updateReadout(preview?'preview':portal?'active':'idle');
 }
@@ -335,16 +355,20 @@ function updatePalmDrawing(now){
  drawingHand=palm.key;handLastSeen=now;
  if(!handTrail.length||Math.hypot(point.x-handTrail.at(-1).x,point.y-handTrail.at(-1).y)>3)handTrail.push({...point,t:now});
  handTrail=handTrail.filter(value=>now-value.t<10000).slice(-96);
- if(handTrail.length<8)return;
+ if(handTrail.length<8){handCircleGuide=null;return;}
+ if(handTrail.at(-1).t===handShapePointAt||now-handShapeCheckAt<60)return;
+ handShapeCheckAt=now;handShapePointAt=handTrail.at(-1).t;
  updateReadout('drawing');
- let nextGuide=null;
- // A short approach stroke may precede the loop: look for a closed shape in the recent trail.
+ let nextGuide=fitHandCircle(sampleStroke(handTrail)),checks=0;
+ // Only classify near-closed loops, with a fixed work budget per camera update.
  for(let start=0;start<=handTrail.length-8;start++){
-  const stroke=handTrail.slice(start),triangle=recognizeTriangle(stroke),fitted=triangle?null:fitHandCircle(stroke);
-  if(fitted&&!nextGuide)nextGuide=fitted;
-  const circle=triangle?null:recognizeCircle(stroke)||(fitted&&Math.abs(fitted.turn)>5.2?fitted:null),shape=triangle||circle;
+  if(Math.hypot(handTrail[start].x-point.x,handTrail[start].y-point.y)>Math.min(36,Math.min(w,h)*.06))continue;
+  const stroke=handTrail.slice(start),xs=stroke.map(p=>p.x),ys=stroke.map(p=>p.y);
+  if(Math.min(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys))<64)continue;
+  if(checks++>=3)break;
+  const result=classifyStroke(stroke),shape=result?.shape;
   if(!shape||shape.r<32||Math.hypot(stroke[0].x-point.x,stroke[0].y-point.y)>Math.min(40,shape.r*.45))continue;
-  if(triangle)summonAvenger(triangle);else openGateway(circle);
+  if(result.type==='triangle')summonAvenger(shape);else openGateway(shape);
   resetHandDrawing(1100);return;
  }
  if(nextGuide&&handCircleGuide&&Math.hypot(nextGuide.x-handCircleGuide.x,nextGuide.y-handCircleGuide.y)<nextGuide.r*.3){
@@ -408,32 +432,29 @@ async function processCamera(session){
  try{inFlight=segmenter.send({image:video});await inFlight;}
  catch(error){if(session===cameraSession){personReady=false;status.textContent='인물 분리가 중단됐어요. 웹캠을 해제한 뒤 다시 연결해 주세요.';}return;}
  finally{inFlight=null;}
- if(session===cameraSession&&stream&&handsReady&&!handInFlight&&performance.now()-lastHandFrame>=65){
+ if(session===cameraSession&&stream&&handsReady&&!handInFlight&&performance.now()-lastHandFrame>=40){
   handProcessingSession=session;lastHandFrame=performance.now();
-  // Hand-model warmup must never freeze the comic video pipeline.
+  // Hand-model warmup must never freeze the live video pipeline.
   const work=Promise.resolve().then(()=>handTracker.send({image:video}));handInFlight=work;
   const watchdog=setTimeout(()=>{if(session===cameraSession&&handInFlight===work){handsReady=false;palms=[];setHandHint('손 인식 로딩이 지연돼요. 인터넷 연결 후 페이지를 새로고침해 주세요.','error');}},25000);
   work.catch(()=>{if(session===cameraSession){handsReady=false;palms=[];setHandHint('손 인식이 중단됐어요. 웹캠을 다시 연결해 주세요.','error');}}).finally(()=>{clearTimeout(watchdog);if(handInFlight===work)handInFlight=null;});
  }
- if(session===cameraSession&&stream)captureTimer=setTimeout(()=>processCamera(session),65);
+ if(session===cameraSession&&stream)captureTimer=setTimeout(()=>processCamera(session),16);
 }
 function updatePerson(results){
  if(!stream||processingSession!==cameraSession||!results.image||!results.segmentationMask)return;
  const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return;
  const scale=Math.min(1,640/vw,480/vh),pw=Math.max(1,Math.round(vw*scale)),ph=Math.max(1,Math.round(vh*scale));
  if(person.width!==pw||person.height!==ph){person.width=pw;person.height=ph;}
- // A fresh alpha matte for every frame: no retained room pixels or horizontal filling.
  pc.save();pc.clearRect(0,0,pw,ph);pc.globalCompositeOperation='source-over';pc.filter='blur(1px)';
  pc.drawImage(results.segmentationMask,0,0,pw,ph);pc.filter='none';pc.globalCompositeOperation='source-in';pc.drawImage(results.image,0,0,pw,ph);pc.restore();
  if(!hasPersonPixels()){
-  personReady=false;toonReady=false;paintCtx.clearRect(0,0,paintedPerson.width,paintedPerson.height);subjectCtx.clearRect(0,0,w,h);
-  status.textContent='인물을 찾는 중이에요. 카메라에 얼굴과 상반신이 보이도록 앉아 주세요.';return;
+  personReady=false;subjectCtx.clearRect(0,0,w,h);status.textContent='인물을 찾는 중이에요. 카메라에 얼굴과 상반신이 보이도록 앉아 주세요.';return;
  }
- const wasToonReady=toonReady;toonReady=paintPerson();
- if(!personReady||(!wasToonReady&&toonReady))status.textContent=toonReady?'코믹스 변환 완료. 손바닥으로 원을 그려보세요. 원이 닫히면 포털이 자동으로 열려요.':'코믹스 그림체를 준비하고 있어요. 잠시 기다려 주세요.';
+ if(!personReady)status.textContent='웹캠 준비 완료. 손바닥으로 원을 그려보세요. 원이 닫히면 포털이 자동으로 열려요.';
  personReady=true;personUpdated=performance.now();
- if(toonReady&&!cameraPortalInitialized){cameraPortalInitialized=true;if(!summonedHero&&(!portal||preview))openGateway(defaultPortal());}
- if(toonReady&&portal&&!preview&&portal.enteredAt==null)portal.enteredAt=personUpdated;
+ if(!cameraPortalInitialized){cameraPortalInitialized=true;if(!summonedHero&&(!portal||preview))openGateway(defaultPortal());}
+ if(portal&&!preview&&portal.enteredAt==null)portal.enteredAt=personUpdated;
 }
 function hasPersonPixels(){
  try{
@@ -444,81 +465,10 @@ function hasPersonPixels(){
   return visible>=Math.max(4,personProbe.width*personProbe.height*.004);
  }catch{return true;}
 }
-// Live cel shading preserves the user's pose and expression; no photographic frame is displayed.
-function makeToonRenderer(){
- const surface=document.createElement('canvas');
- const gl=surface.getContext('webgl',{alpha:true,premultipliedAlpha:false,preserveDrawingBuffer:true,antialias:false});
- if(!gl)return null;
- try{
-  const vertex='attribute vec2 position;varying vec2 uv;void main(){uv=position*.5+.5;gl_Position=vec4(position,0.,1.);}';
-  const fragment=`precision mediump float;
-   varying vec2 uv;uniform sampler2D image;uniform vec2 pixel;
-   float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
-   void main(){
-    vec4 original=texture2D(image,uv);if(original.a<.015){gl_FragColor=vec4(0.);return;}
-    vec3 color=vec3(0.);float weight=0.;
-    for(int x=-2;x<=2;x++){for(int y=-2;y<=2;y++){
-     vec4 s=texture2D(image,uv+vec2(float(x),float(y))*pixel*1.25);
-     float w=exp(-float(x*x+y*y)*.22)*s.a;
-     color+=s.rgb*w;weight+=w;
-    }}
-    color/=max(weight,.001);
-    float value=lum(color);
-    // Quantize light, not each RGB channel, to avoid pink/green facial patches.
-    float tone=clamp((value-.5)*1.15+.52,0.,1.);
-    float band=floor(sqrt(tone)*6.+.5)/6.;band*=band;
-    color=mix(vec3(value),color,1.22)*(mix(tone,band,.62)/max(value,.04));
-    color=mix(color,vec3(1.,.95,.84),smoothstep(.72,.95,tone)*.12);
-    float dx=lum(texture2D(image,uv+vec2(pixel.x*1.6,0.)).rgb)-lum(texture2D(image,uv-vec2(pixel.x*1.6,0.)).rgb);
-    float dy=lum(texture2D(image,uv+vec2(0.,pixel.y*1.6)).rgb)-lum(texture2D(image,uv-vec2(0.,pixel.y*1.6)).rgb);
-    float edge=smoothstep(.06,.22,length(vec2(dx,dy)));
-    vec3 ink=vec3(.045,.04,.075);
-    vec2 paper=uv/pixel;
-    float radius=mix(.06,.27,1.-smoothstep(.18,.75,tone));
-    float dotInk=1.-smoothstep(radius-.025,radius+.025,length(fract(paper/6.)-.5));
-    color=mix(color,ink,dotInk*.2*(1.-smoothstep(.7,.9,tone)));
-    float hatch=(1.-step(1.,mod(paper.x+paper.y,8.)))*(1.-smoothstep(.12,.28,tone));
-    color=mix(color,ink,hatch*.2);color=mix(color,ink,edge*.9);
-    gl_FragColor=vec4(clamp(color,0.,1.),original.a);
-   }`;
-  const compile=(type,source)=>{const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw Error('toon shader');return shader;};
-  const program=gl.createProgram();gl.attachShader(program,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))return null;
-  gl.useProgram(program);const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
-  const location=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(location);gl.vertexAttribPointer(location,2,gl.FLOAT,false,0,0);
-  const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);const pixel=gl.getUniformLocation(program,'pixel');
-  return {surface,render(source){if(gl.isContextLost())return false;if(surface.width!==source.width||surface.height!==source.height){surface.width=source.width;surface.height=source.height;}gl.viewport(0,0,surface.width,surface.height);gl.useProgram(program);gl.bindTexture(gl.TEXTURE_2D,texture);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);gl.uniform2f(pixel,1/source.width,1/source.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,6);return true;}};
- }catch{return null;}
-}
-function paintPerson(){
- const scale=Math.min(1,400/person.width,320/person.height),pw=Math.max(1,Math.round(person.width*scale)),ph=Math.max(1,Math.round(person.height*scale));
- if(paintedPerson.width!==pw||paintedPerson.height!==ph){paintedPerson.width=pw;paintedPerson.height=ph;}
- if(!toonRendererTried){toonRendererTried=true;toonRenderer=makeToonRenderer();}
- paintCtx.clearRect(0,0,pw,ph);
- try{
-  if(toonRenderer?.render(person)){paintCtx.drawImage(toonRenderer.surface,0,0,pw,ph);return true;}
-  // Software fallback also transforms the pixels; it never displays a raw face.
-  paintCtx.drawImage(person,0,0,pw,ph);const image=paintCtx.getImageData(0,0,pw,ph),src=new Uint8ClampedArray(image.data),data=image.data;
-  for(let y=0;y<ph;y++)for(let x=0;x<pw;x++){
-   const k=(y*pw+x)*4;if(src[k+3]<4)continue;let rr=0,gg=0,bb=0,total=0;
-   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const sx=Math.max(0,Math.min(pw-1,x+dx)),sy=Math.max(0,Math.min(ph-1,y+dy)),q=(sy*pw+sx)*4,a=src[q+3]/255;rr+=src[q]*a;gg+=src[q+1]*a;bb+=src[q+2]*a;total+=a;}
-   rr/=Math.max(total,.01);gg/=Math.max(total,.01);bb/=Math.max(total,.01);
-   const luminance=(rr*.299+gg*.587+bb*.114)/255,tone=Math.max(0,Math.min(1,(luminance-.5)*1.15+.52));
-   let band=Math.round(Math.sqrt(tone)*6)/6;band*=band;const light=(tone*.38+band*.62)/Math.max(luminance,.04);
-   const left=(y*pw+Math.max(0,x-1))*4,right=(y*pw+Math.min(pw-1,x+1))*4,up=(Math.max(0,y-1)*pw+x)*4,down=(Math.min(ph-1,y+1)*pw+x)*4;
-   const lum=q=>src[q]*.299+src[q+1]*.587+src[q+2]*.114;
-   const edge=Math.min(.9,Math.max(0,(Math.hypot(lum(left)-lum(right),lum(up)-lum(down))/255-.06)/.16)*.9);
-   const dot=Math.hypot((x%6+.5)/6-.5,(y%6+.5)/6-.5)<.06+.21*(1-Math.max(0,Math.min(1,(tone-.18)/.57)));
-   const ink=Math.max(edge,dot&&tone<.85?.18:0,(x+y)%8===0&&tone<.25?.2:0);
-   const gray=luminance*255;
-   data[k]=Math.max(0,Math.min(255,((gray+(rr-gray)*1.22)*light)*(1-ink)+12*ink));data[k+1]=Math.max(0,Math.min(255,((gray+(gg-gray)*1.22)*light)*(1-ink)+10*ink));data[k+2]=Math.max(0,Math.min(255,((gray+(bb-gray)*1.22)*light)*(1-ink)+19*ink));
-  }
-  paintCtx.putImageData(image,0,0);return true;
- }catch{paintCtx.clearRect(0,0,pw,ph);return false;}
-}
+// Render only the segmented person, without face or color effects.
 function drawSubject(now){
  subjectCtx.clearRect(0,0,w,h);
- if(!stream||!personReady||!toonReady||!portal||preview||now-personUpdated>3000)return;
+ if(!stream||!personReady||!portal||preview||now-personUpdated>3000)return;
  const open=reducedMotion.matches?1:Math.min(1,Math.max(0,(now-portal.born)/800)),r=portal.r*(1-Math.pow(1-open,3));
  if(r<=.5)return;
  // Fit the camera subject to the drawn portal, never to the full stage.
@@ -526,8 +476,7 @@ function drawSubject(now){
  const pose=entrancePose(now);
  subjectCtx.save();subjectCtx.beginPath();subjectCtx.arc(portal.x,portal.y,r,0,Math.PI*2);subjectCtx.clip();
  subjectCtx.translate(portal.x,portal.y+pose.lift);subjectCtx.scale(-pose.zoom,pose.zoom);subjectCtx.globalAlpha=open*pose.opacity;
- if(pose.progress<1)subjectCtx.filter='brightness('+(1+(1-pose.progress)*1.8)+')';
- subjectCtx.drawImage(paintedPerson,-pw/2,-ph/2,pw,ph);
+ subjectCtx.drawImage(person,-pw/2,-ph/2,pw,ph);
  subjectCtx.restore();
 }
 

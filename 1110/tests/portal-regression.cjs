@@ -58,9 +58,12 @@ function setup({modelAvailable=true,deferred=false,handAvailable=true,cameraErro
   if(modelAvailable)sandbox.SelfieSegmentation=Model;
   if(handAvailable)sandbox.Hands=HandModel;
   vm.createContext(sandbox);
-  vm.runInContext(source+`\nthis.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,palmStagePoint,updatePalmDrawing,fitHandCircle,handInkPoint,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,
-    state:()=>({personReady,toonReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt,heroIndex:summonedHero?.heroIndex,heroX:summonedHero?.x,heroY:summonedHero?.y,handTrailLength:handTrail.length,drawingHand,handCooldownUntil,handPoint:palms[0]?palmStagePoint(palms[0]):null}),
-    personContext:pc,probeContext:personProbeCtx,paintContext:paintCtx,paintedPerson,person,subjectContext:subjectCtx,sceneContext:ctx,landscapeContext:landscapeCtx,worldContext:worldCtx,cosmosImage,snowImage,portalRealms,avengers};`,sandbox);
+  vm.runInContext(source+`\nlet shapeAnalysisCount=0;
+    const originalTriangle=recognizeTriangle,originalCircle=recognizeCircle,originalFit=fitHandCircle;
+    recognizeTriangle=p=>{shapeAnalysisCount++;return originalTriangle(p);};recognizeCircle=p=>{shapeAnalysisCount++;return originalCircle(p);};fitHandCircle=p=>{shapeAnalysisCount++;return originalFit(p);};
+    this.api={start:()=>cameraButton.onclick(),stop:stopCamera,frame,updatePerson,resize,describePalm,updatePalms,palmStagePoint,updatePalmDrawing,fitHandCircle,handInkPoint,cameraPointInPortal,entrancePose,drawPalmSpells,drawPortalEntrance,restorePortalSession,processCamera,analyses:()=>shapeAnalysisCount,
+    state:()=>({personReady,handsReady,handBusy:!!handInFlight,palms:palms.length,personUpdated,cameraSession,processingSession,stream:!!stream,pw:person.width,ph:person.height,realmIndex:portal?.realmIndex,enteredAt:portal?.enteredAt,heroIndex:summonedHero?.heroIndex,heroX:summonedHero?.x,heroY:summonedHero?.y,handTrailLength:handTrail.length,drawingHand,handCooldownUntil,handPoint:palms[0]?palmStagePoint(palms[0]):null}),
+    personContext:pc,probeContext:personProbeCtx,person,subjectContext:subjectCtx,sceneContext:ctx,landscapeContext:landscapeCtx,worldContext:worldCtx,cosmosImage,snowImage,portalRealms,avengers};`,sandbox);
   function drawCircle(x=900,y=250,r=90){
     const events=elements.get('#scene').listeners;
     const point=a=>({pointerId:1,button:0,clientX:x+Math.cos(a)*r,clientY:y+Math.sin(a)*r+82});
@@ -102,16 +105,12 @@ test('camera readiness opens a default portal and drawing relocates the subject'
   env.api.subjectContext.operations.length=0;env.api.frame(4000);
   assert.deepEqual([...env.api.subjectContext.operations.find(op=>op.type==='arc').args].slice(0,3),[650,200,60]);
 });
-test('comic rendering replaces the photo, uses halftones, and has no cloak overlay',async()=>{
-  const env=setup();await env.api.start();await flush();assert.equal(env.api.state().toonReady,true);
-  const pixels=env.api.paintContext.operations.find(op=>op.type==='pixels');assert.ok(pixels);assert.notEqual(pixels.image.data[0],133);
-  env.drawCircle();env.setClock(2000);env.api.updatePerson({image:{},segmentationMask:{}});env.api.frame(2000);
-  const displayed=env.api.subjectContext.operations.filter(op=>op.type==='draw');assert.equal(displayed.length,1);assert.equal(displayed[0].image,env.api.paintedPerson);assert.notEqual(displayed[0].image,env.api.person);
-  const data=pixels.image.data,width=pixels.image.width;
-  assert.ok(data[(2*width+2)*4]<data[0],'shadow halftones must darken the dot centers');
-  assert.ok(!env.api.subjectContext.operations.some(op=>op.type==='bezier'));
-  assert.doesNotMatch(source,/drawCloak|cloakEnabled|capeProbe/);assert.doesNotMatch(html,/id="cloak"/);
-  env.api.stop();assert.equal(env.api.state().toonReady,false);
+test('the camera subject keeps its original appearance without pixel or shader effects',async()=>{
+ const env=setup();await env.api.start();await flush();
+ env.drawCircle();env.setClock(2000);env.api.updatePerson({image:{id:'natural-frame'},segmentationMask:{id:'fresh-mask'}});env.api.frame(2000);
+ const displayed=env.api.subjectContext.operations.filter(op=>op.type==='draw');assert.equal(displayed.length,1);assert.equal(displayed[0].image,env.api.person);
+ assert.equal(displayed[0].filter,'none');assert.ok(!env.contexts.some(ctx=>ctx.operations.some(op=>op.type==='pixels')));
+ assert.doesNotMatch(source,/makeToonRenderer|texImage2D|putImageData/);
 });
 test('cosmos stays behind the person inside the circle while snow remains outside',async()=>{
   const env=setup();await env.api.start();await flush();env.drawCircle(880,240,95);env.setClock(2000);
@@ -136,7 +135,7 @@ test('stalled segmentation frames disappear instead of leaving a ghost',async()=
 test('an empty foreground is reported and cannot leave a stale person on screen',async()=>{
  const env=setup();await env.api.start();await flush();
  env.api.probeContext.getImageData=(x,y,width,height)=>({width,height,data:new Uint8ClampedArray(width*height*4)});
- env.api.updatePerson({image:{},segmentationMask:{}});assert.equal(env.api.state().personReady,false);assert.equal(env.api.state().toonReady,false);
+ env.api.updatePerson({image:{},segmentationMask:{}});assert.equal(env.api.state().personReady,false);assert.equal(env.api.state().personReady,false);
  assert.match(env.elements.get('#status').textContent,/인물을 찾는 중/);env.api.subjectContext.operations.length=0;env.api.frame(2000);assert.ok(!env.api.subjectContext.operations.some(op=>op.type==='draw'));
 });
 test('each ten openings visit every world without adjacent repeats',()=>{
@@ -297,6 +296,44 @@ test('a single bad hand detection does not create a spike, while intentional mov
  for(let i=0;i<4;i++)feedPalmAt(env,890,300,2400+i*100);
  assert.ok(Math.abs(env.api.state().handPoint.x-890)<5,'a real move must settle within a few camera frames');
 });
+test('continuous hand movement is not delayed by a full camera sample',async()=>{
+ const env=setup();await env.api.start();await flush();
+ for(let i=0;i<3;i++)feedPalmAt(env,700,300,2000+i*60);
+ for(let i=1;i<=10;i++)feedPalmAt(env,700+i*15,300,2120+i*60);
+ assert.ok(Math.abs(env.api.state().handPoint.x-850)<8,'the cursor must follow deliberate motion without the median-filter frame delay');
+});
+test('a fast closed circle is checked even when the hand stops at the endpoint',async()=>{
+ const env=setup();await env.api.start();await flush();const before=env.api.state().realmIndex;
+ for(let i=0;i<=16;i++){const angle=i*Math.PI*2/16;feedPalmAt(env,830+Math.cos(angle)*85,270+Math.sin(angle)*85,2000+i*40);}
+ for(let hold=1;hold<=4;hold++)feedPalmAt(env,915,270,2640+hold*40);
+ assert.notEqual(env.api.state().realmIndex,before);assert.equal(env.api.state().heroIndex,undefined);
+});
+test('a long hand trail cannot trigger unbounded shape analysis per camera frame',async()=>{
+ const env=setup();await env.api.start();await flush();let most=0;
+ for(let i=0;i<180;i++){
+  const before=env.api.analyses();feedPalmAt(env,830+Math.cos(i*.28)*100,270+Math.sin(i*.41)*75,2000+i*80);
+  const work=env.api.analyses()-before;most=Math.max(most,work);assert.ok(work<=13,'at most three closed candidates and one guide may be analysed');
+ }
+ assert.ok(most>0,'the budget check must exercise shape recognition');
+});
+test('hand-drawn circles remain portals across different sampling speeds and wobble',async()=>{
+ const env=setup();await env.api.start();await flush();let clock=2000;
+ for(const steps of [16,24,48])for(const amplitude of [0,.12,.23]){
+  env.setClock(clock);env.elements.get('#reset').click();clock+=900;
+  for(let i=0;i<=steps;i++){
+   const angle=i*Math.PI*2/steps,r=72*(1+amplitude*Math.sin(i*2.1));
+   feedPalmAt(env,830+Math.cos(angle)*r,280+Math.sin(angle)*r,clock+i*90);
+   assert.equal(env.api.state().heroIndex,undefined,'a round gesture must never summon a character');
+  }
+  assert.notEqual(env.api.state().realmIndex,undefined,'the completed circle must open a world');clock+=(steps+10)*90;
+ }
+});
+test('a hand-drawn triangle still summons a character after responsive tracking',async()=>{
+ const env=setup();await env.api.start();await flush();env.setClock(2000);env.elements.get('#reset').click();
+ const stroke=triangleStroke({wobble:3,steps:16});
+ for(let i=0;i<stroke.length;i++)feedPalmAt(env,stroke[i].x-70,stroke[i].y+35,3000+i*90);
+ assert.notEqual(env.api.state().heroIndex,undefined);assert.equal(env.api.state().realmIndex,undefined);
+});
 test('circular hand ink is corrected to a stable radius after enough of a loop',()=>{
  const env=setup();
  const stroke=Array.from({length:40},(_,i)=>{const angle=i*Math.PI*1.6/39,r=90*(1+.08*Math.sin(i*2.7)+.025*Math.cos(i*1.9));return {x:900+Math.cos(angle)*r,y:250+Math.sin(angle)*r,t:i*100};});
@@ -354,12 +391,12 @@ test('an open palm summons a mirrored spell before entry, and a fist removes it'
  for(const [mcp,tip] of [[5,8],[9,12],[13,16],[17,20]])landmarks[tip]={...landmarks[mcp]};
  assert.equal(env.api.describePalm(landmarks),null);env.api.updatePalms({multiHandLandmarks:[landmarks]});assert.equal(env.api.state().palms,0);
 });
-test('hand model failure does not disable the camera or comic rendering',async()=>{
- const env=setup({handAvailable:false});await env.api.start();await flush();assert.equal(env.api.state().stream,true);assert.equal(env.api.state().toonReady,true);assert.equal(env.api.state().handsReady,false);
+test('hand model failure does not disable the camera or natural video',async()=>{
+ const env=setup({handAvailable:false});await env.api.start();await flush();assert.equal(env.api.state().stream,true);assert.equal(env.api.state().personReady,true);assert.equal(env.api.state().handsReady,false);
  assert.match(env.elements.get('#hand-status').textContent,/손 인식을 불러오지 못했어요/);
 });
 test('slow hand-model warmup does not freeze the person video', {timeout:2000},async()=>{
- const env=setup({handDeferred:true});await env.api.start();await flush();assert.equal(env.api.state().handBusy,true);assert.equal(env.api.state().toonReady,true);
+ const env=setup({handDeferred:true});await env.api.start();await flush();assert.equal(env.api.state().handBusy,true);assert.equal(env.api.state().personReady,true);
  env.setClock(2000);await env.api.processCamera(env.api.state().cameraSession);assert.equal(env.api.state().personUpdated,2000);assert.equal(env.api.state().handBusy,true);
  env.releaseHand();await flush();assert.equal(env.api.state().handBusy,false);env.api.stop();
 });
