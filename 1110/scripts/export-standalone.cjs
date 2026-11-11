@@ -20,7 +20,7 @@ const html = source.replace(/(['"])(assets\/[^'"\r\n]+\.(?:png|jpe?g|webp))\1/g,
   const mime = extension === '.png' ? 'image/png' : extension === '.webp' ? 'image/webp' : 'image/jpeg';
   return quote + 'data:' + mime + ';base64,' + fs.readFileSync(asset).toString('base64') + quote;
 });
-assert.equal(assets.size, 5, 'All five scene images must be embedded');
+assert.equal(assets.size, 11, 'All ten portal backgrounds and the snowfield must be embedded');
 assert.ok(!/(['"])assets\/[^'"]+\1/.test(html), 'No local image dependencies may remain');
 for (const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)) new Function(match[1]);
 fs.writeFileSync(output, html, 'utf8');

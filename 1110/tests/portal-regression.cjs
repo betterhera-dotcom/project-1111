@@ -139,14 +139,58 @@ test('an empty foreground is reported and cannot leave a stale person on screen'
  env.api.updatePerson({image:{},segmentationMask:{}});assert.equal(env.api.state().personReady,false);assert.equal(env.api.state().toonReady,false);
  assert.match(env.elements.get('#status').textContent,/인물을 찾는 중/);env.api.subjectContext.operations.length=0;env.api.frame(2000);assert.ok(!env.api.subjectContext.operations.some(op=>op.type==='draw'));
 });
-test('each four openings use all four worlds without adjacent repeats',()=>{
+test('each ten openings visit every world without adjacent repeats',()=>{
   const env=setup(),ids=[];let previous=env.api.state().realmIndex;
-  for(let i=0;i<32;i++){
+  assert.equal(env.api.portalRealms.length,10);
+  for(let i=0;i<80;i++){
     if(i%2)env.elements.get('#demo').click();else env.drawCircle();
     const current=env.api.state().realmIndex;assert.notEqual(current,previous);ids.push(current);previous=current;
     env.api.resize();assert.equal(env.api.state().realmIndex,current);
   }
-  for(let i=0;i<ids.length;i+=4)assert.equal(new Set(ids.slice(i,i+4)).size,4);
+  for(let i=0;i<ids.length;i+=10)assert.equal(new Set(ids.slice(i,i+10)).size,10);
+});
+test('all ten destinations have unique labels and local background assets',()=>{
+  const {portalRealms}=setup().api;
+  assert.equal(new Set(portalRealms.map(realm=>realm.label)).size,10);
+  const images=portalRealms.map(realm=>realm.image.src);
+  assert.equal(new Set(images).size,10);
+  for(const image of images){
+    assert.ok(image.startsWith('assets/'));
+    assert.ok(fs.existsSync(path.join(__dirname,'..',image)),image+' must exist');
+  }
+});
+function traceStroke(env,points){
+  const events=env.elements.get('#scene').listeners;
+  const event=point=>({pointerId:1,button:0,clientX:point.x,clientY:point.y+82});
+  events.pointerdown(event(points[0]));
+  for(const point of points.slice(1))events.pointermove(event(point));
+  events.pointerup(event(points.at(-1)));
+}
+function circleStroke({steps=48,turn=Math.PI*2,rx=90,ry=rx}={}){
+  return Array.from({length:steps+1},(_,i)=>({x:900+Math.cos(i*turn/steps)*rx,y:250+Math.sin(i*turn/steps)*ry}));
+}
+test('quick, small, slightly open, and hand-drawn oval circles open portals',()=>{
+  for(const options of [{steps:10},{rx:28},{turn:Math.PI*5/3},{rx:110,ry:72}]){
+    const env=setup();env.elements.get('#reset').click();
+    traceStroke(env,circleStroke(options));
+    assert.equal(env.elements.get('#stage-state').textContent,'GATEWAY ESTABLISHED',JSON.stringify(options));
+  }
+});
+test('coalesced pointer samples preserve a fast circular gesture',()=>{
+  const env=setup();env.elements.get('#reset').click();
+  const events=env.elements.get('#scene').listeners,points=circleStroke();
+  const event=point=>({pointerId:1,button:0,clientX:point.x,clientY:point.y+82});
+  events.pointerdown(event(points[0]));
+  events.pointermove({...event(points.at(-1)),getCoalescedEvents:()=>points.slice(1).map(event)});
+  events.pointerup(event(points.at(-1)));
+  assert.equal(env.elements.get('#stage-state').textContent,'GATEWAY ESTABLISHED');
+});
+test('a click, straight stroke, or half circle cannot open a portal',()=>{
+  for(const points of [[{x:900,y:250}],Array.from({length:30},(_,i)=>({x:800+i*7,y:250})),circleStroke({turn:Math.PI})]){
+    const env=setup();env.elements.get('#reset').click();traceStroke(env,points);
+    assert.equal(env.elements.get('#stage-state').textContent,'AWAITING GESTURE');
+    assert.equal(env.api.state().realmIndex,undefined);
+  }
 });
 test('disconnect clears the subject and rejects late callbacks',async()=>{
   const env=setup();await env.api.start();await flush();env.api.stop();
