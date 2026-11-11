@@ -334,6 +334,34 @@ test('a hand-drawn triangle still summons a character after responsive tracking'
  for(let i=0;i<stroke.length;i++)feedPalmAt(env,stroke[i].x-70,stroke[i].y+35,3000+i*90);
  assert.notEqual(env.api.state().heroIndex,undefined);assert.equal(env.api.state().realmIndex,undefined);
 });
+function roundedTriangleStroke(rounding){
+ const vertices=[{x:830,y:190},{x:930,y:370},{x:730,y:370}],stroke=[];
+ const mix=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t});
+ for(let side=0;side<3;side++){
+  const corner=vertices[side],next=vertices[(side+1)%3];
+  const entry=mix(corner,vertices[(side+2)%3],rounding),exit=mix(corner,next,rounding);
+  for(let i=0;i<8;i++){
+   const t=i/8;stroke.push(mix(mix(entry,corner,t),mix(corner,exit,t),t));
+  }
+  const end=mix(next,corner,rounding);
+  for(let i=0;i<12;i++)stroke.push(mix(exit,end,i/12));
+ }
+ return [...stroke,stroke[0]];
+}
+test('rounded triangle corners still summon a character with mouse and webcam input',async()=>{
+ for(const rounding of [.2,.3]){
+  const stroke=roundedTriangleStroke(rounding),mouse=setup();
+  traceStroke(mouse,stroke);
+  assert.equal(mouse.elements.get('#stage-state').textContent,'AVENGER SUMMONED',`mouse rounding ${rounding}`);
+  const webcam=setup();await webcam.api.start();await flush();
+  const previous=webcam.api.state().realmIndex;
+  for(let i=0;i<stroke.length;i++){
+   feedPalmAt(webcam,stroke[i].x,stroke[i].y,2000+i*80);
+   if(webcam.api.state().heroIndex===undefined)assert.equal(webcam.api.state().realmIndex,previous,`webcam rounding ${rounding} opened a world`);
+  }
+  assert.notEqual(webcam.api.state().heroIndex,undefined,`webcam rounding ${rounding}`);
+ }
+});
 test('circular hand ink is corrected to a stable radius after enough of a loop',()=>{
  const env=setup();
  const stroke=Array.from({length:40},(_,i)=>{const angle=i*Math.PI*1.6/39,r=90*(1+.08*Math.sin(i*2.7)+.025*Math.cos(i*1.9));return {x:900+Math.cos(angle)*r,y:250+Math.sin(angle)*r,t:i*100};});

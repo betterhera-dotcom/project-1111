@@ -170,8 +170,8 @@ function classifyStroke(stroke){
  if(stroke.length<6)return null;
  const p=sampleStroke(stroke),triangle=recognizeTriangle(p),circle=recognizeCircle(p),fitted=fitHandCircle(p);
  const round=circle||(fitted&&Math.abs(fitted.turn)>5.2&&Math.hypot(p[0].x-p.at(-1).x,p[0].y-p.at(-1).y)<fitted.r*.65?fitted:null);
- // Compare both models on the same evenly sampled loop; do not give triangles priority.
- if(triangle&&(!round||triangle.error<(fitted?.error??circle.error)*.6))return {type:'triangle',shape:triangle};
+ // Three mostly straight sides can survive rounded corners. Keep a strong circle fit round.
+ if(triangle&&(!round||!fitted||fitted.error>=.075))return {type:'triangle',shape:triangle};
  return round?{type:'circle',shape:recognizeCircle(stroke)||round}:null;
 }
 function segmentDistance(p,a,b){
@@ -183,18 +183,37 @@ function recognizeTriangle(p){
  if(p.length<6)return null;
  const xs=p.map(q=>q.x),ys=p.map(q=>q.y),bw=Math.max(...xs)-Math.min(...xs),bh=Math.max(...ys)-Math.min(...ys),size=Math.max(bw,bh),x=(Math.max(...xs)+Math.min(...xs))/2,y=(Math.max(...ys)+Math.min(...ys))/2;
  if(Math.min(bw,bh)<40||Math.min(bw,bh)/size<.3||Math.hypot(p[0].x-p.at(-1).x,p[0].y-p.at(-1).y)>size*.3)return null;
- // Find the three corners, then check that the stroke follows their edges.
+ // Pick corners that enclose the stroke, even if one rounded tip lies nearer than a shoulder.
  const a=p.reduce((best,q)=>Math.hypot(q.x-x,q.y-y)>Math.hypot(best.x-x,best.y-y)?q:best);
- const b=p.reduce((best,q)=>Math.hypot(q.x-a.x,q.y-a.y)>Math.hypot(best.x-a.x,best.y-a.y)?q:best);
- const c=p.reduce((best,q)=>segmentDistance(q,a,b)>segmentDistance(best,a,b)?q:best);
- if(Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x))<size*size*.2)return null;
- const perimeter=Math.hypot(a.x-b.x,a.y-b.y)+Math.hypot(b.x-c.x,b.y-c.y)+Math.hypot(c.x-a.x,c.y-a.y);
- let error=0,worst=0,length=0;
- for(let i=0;i<p.length;i++){
-  const distance=Math.min(segmentDistance(p[i],a,b),segmentDistance(p[i],b,c),segmentDistance(p[i],c,a));
-  error+=distance;worst=Math.max(worst,distance);if(i)length+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);
+ let b=a,c=a,largestArea=0;
+ for(let i=0;i<p.length-1;i++){
+  const dx=p[i].x-a.x,dy=p[i].y-a.y;
+  for(let j=i+1;j<p.length;j++){
+   const area=Math.abs(dx*(p[j].y-a.y)-dy*(p[j].x-a.x));
+   if(area>largestArea){largestArea=area;b=p[i];c=p[j];}
+  }
  }
- return error/p.length<size*.035&&worst<size*.1&&length>perimeter*.75&&length<perimeter*1.35?{x,y,r:(bw+bh)/4,error:error/p.length/(size*.5)}:null;
+ if(largestArea<size*size*.2)return null;
+ const corners=[p.indexOf(a),p.indexOf(b),p.indexOf(c)].sort((i,j)=>i-j);
+ const distances=[0];
+ for(let i=1;i<p.length;i++)distances.push(distances[i-1]+Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y));
+ const length=distances.at(-1)+Math.hypot(p[0].x-p.at(-1).x,p[0].y-p.at(-1).y);
+ let perimeter=0;
+ for(let i=0;i<3;i++){
+  const start=corners[i],end=corners[(i+1)%3];
+  const sideLength=distances[end]-distances[start]+(end<start?length:0);
+  const chord=Math.hypot(p[end].x-p[start].x,p[end].y-p[start].y);
+  if(sideLength<length*.12||chord<sideLength*.9)return null;
+  perimeter+=chord;
+ }
+ if(perimeter<length*.93)return null;
+ let totalDeviation=0;
+ for(const point of p){
+  const deviation=Math.min(segmentDistance(point,a,b),segmentDistance(point,b,c),segmentDistance(point,c,a));
+  if(deviation>size*.17)return null;
+  totalDeviation+=deviation;
+ }
+ return totalDeviation/p.length<=size*.085?{x,y,r:(bw+bh)/4}:null;
 }
 function recognizeCircle(p){
  if(p.length<8)return null;
